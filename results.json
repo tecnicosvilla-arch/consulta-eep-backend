@@ -1,0 +1,242 @@
+{
+  "running": false,
+  "progress": 33,
+  "total": 33,
+  "results": [
+    {
+      "niu": "201096",
+      "ultimoPago": "02/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Parador Trans Villagarzon  Prop Htal (201096)"
+    },
+    {
+      "niu": "204958",
+      "ultimoPago": "17/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Diaz Ceballos Diana Catalina (204958)"
+    },
+    {
+      "niu": "203158",
+      "ultimoPago": "16/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Burbano Gomez Raul (203158)"
+    },
+    {
+      "niu": "205438",
+      "ultimoPago": "30/04/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Torres Lopera Monica Milena (205438)"
+    },
+    {
+      "niu": "204268",
+      "ultimoPago": "13/05/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Dorado Francy Yised (204268)"
+    },
+    {
+      "niu": "205387",
+      "ultimoPago": "12/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Valencia Ramirez Mabel (205387)"
+    },
+    {
+      "niu": "296527",
+      "ultimoPago": "02/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Moralez Sanet Sol (296527)"
+    },
+    {
+      "niu": "295223",
+      "ultimoPago": "18/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Munoz Narvaez Dilmer Jhames (295223)"
+    },
+    {
+      "niu": "202253",
+      "ultimoPago": "04/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Guerron Gustavo (202253)"
+    },
+    {
+      "niu": "205883",
+      "ultimoPago": "16/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Consorcio Infraestructura Sur (205883)"
+    },
+    {
+      "niu": "296531",
+      "ultimoPago": "03/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Nelson Dario Arteaga (296531)"
+    },
+    {
+      "niu": "202250",
+      "ultimoPago": "09/05/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Luna Gilberto (202250)"
+    },
+    {
+      "niu": "205027",
+      "ultimoPago": "15/05/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Solarte Ceron Sandro Erney (205027)"
+    },
+    {
+      "niu": "204206",
+      "ultimoPago": "02/05/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Coral Burbano Leonardo (204206)"
+    },
+    {
+      "niu": "296097",
+      "ultimoPago": "05/05/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Higinio Rubiel Burbano (296097)"
+    },
+    {
+      "niu": "201842",
+      "ultimoPago": "07/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Lopez Rico Juan Carlos (201842)"
+    },
+    {
+      "niu": "203185",
+      "ultimoPago": "05/05/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Martinez Garcia Robinson (203185)"
+    },
+    {
+      "niu": "202090",
+      "ultimoPago": "31/03/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Salcedo De Jacanamijoy Maria Irene (202090)"
+    },
+    {
+      "niu": "204318",
+      "ultimoPago": "09/05/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Lozano Totena Jose Domingo (204318)"
+    },
+    {
+      "niu": "200994",
+      "ultimoPago": "04/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Perez Lozada Rodrigo Herminsul (200994)"
+    },
+    {
+      "niu": "202646",
+      "ultimoPago": "13/05/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Arteaga Jose William (202646)"
+    },
+    {
+      "niu": "296149",
+      "ultimoPago": "01/04/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Cabrera Ortega Jailer Jimy (296149)"
+    },
+    {
+      "niu": "271595",
+      "ultimoPago": "19/03/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Trujillo De Carvajal Eneida (271595)"
+    },
+    {
+      "niu": "205655",
+      "ultimoPago": "06/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Diaz Lopez Carlos Alberto (205655)"
+    },
+    {
+      "niu": "200639",
+      "ultimoPago": "07/03/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Cortes Portilla Victor Senen (200639)"
+    },
+    {
+      "niu": "204529",
+      "ultimoPago": "09/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Guanga Rosero Oscar Narciso (204529)"
+    },
+    {
+      "niu": "200599",
+      "ultimoPago": "05/04/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Juan Domingo Estrella Santacruz (200599)"
+    },
+    {
+      "niu": "200641",
+      "ultimoPago": "06/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Jose Celestino Zuniga Arias (200641)"
+    },
+    {
+      "niu": "205024",
+      "ultimoPago": "23/04/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Roman Clara (205024)"
+    },
+    {
+      "niu": "200652",
+      "ultimoPago": "06/03/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Leonardo De Jesus Canas Zambrano (200652)"
+    },
+    {
+      "niu": "201384",
+      "ultimoPago": "06/04/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Martinez Zambrano Carlos Anibal (201384)"
+    },
+    {
+      "niu": "200709",
+      "ultimoPago": "05/05/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Rua Carmelina (200709)"
+    },
+    {
+      "niu": "200752",
+      "ultimoPago": "03/06/2026",
+      "estadoPago": "Aplicado",
+      "pagado": false,
+      "diagnostico_seleccion": "Carlosama Rigoberto (200752)"
+    }
+  ],
+  "startedAt": "2026-07-17T05:10:34.958Z",
+  "finishedAt": "2026-07-17T05:13:11.520Z",
+  "error": null,
+  "ruta": "20"
+}

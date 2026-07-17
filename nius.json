@@ -1,0 +1,1724 @@
+[
+  {
+    "niu": "103608",
+    "nombre": "Garcia Jacanamejoy Arnulfo",
+    "direccion": "Vr Las Palmeras",
+    "ruta": "19"
+  },
+  {
+    "niu": "103668",
+    "nombre": "Cabezas Quinonez Hilda Maria",
+    "direccion": "Vr Las Palmeras",
+    "ruta": "19"
+  },
+  {
+    "niu": "105294",
+    "nombre": "Rojas Pasinga Richard Jimmi",
+    "direccion": "Vr Las Palmeras",
+    "ruta": "19"
+  },
+  {
+    "niu": "108038",
+    "nombre": "Institucion Educativa Puerto Limon",
+    "direccion": "Vr Las Palmeras",
+    "ruta": "19"
+  },
+  {
+    "niu": "178001",
+    "nombre": "Canar Rigoberto",
+    "direccion": "Vr El Mezon",
+    "ruta": "19"
+  },
+  {
+    "niu": "110958",
+    "nombre": "Ortega Pazcuasa Didier Rolando",
+    "direccion": "Br San Miguel Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "197178",
+    "nombre": "Palacios Semanate Monica Eudalia",
+    "direccion": "Vr El Mezon",
+    "ruta": "19"
+  },
+  {
+    "niu": "198762",
+    "nombre": "Ecoanalisis S.A.S.",
+    "direccion": "Vr El Mezon",
+    "ruta": "19"
+  },
+  {
+    "niu": "105381",
+    "nombre": "Ortega Burbano Hector Eulises",
+    "direccion": "Vr El Mezon",
+    "ruta": "19"
+  },
+  {
+    "niu": "193763",
+    "nombre": "Pantoja Rosero Marcos Antoli",
+    "direccion": "Vr El Mezon",
+    "ruta": "19"
+  },
+  {
+    "niu": "193636",
+    "nombre": "Escuela Villa Gloria",
+    "direccion": "Vr Villa Gloria De Toroyaco",
+    "ruta": "19"
+  },
+  {
+    "niu": "193641",
+    "nombre": "Cabezas Quinones Seten",
+    "direccion": "Vr Villa Gloria De Toroyaco",
+    "ruta": "19"
+  },
+  {
+    "niu": "176030",
+    "nombre": "Castillo Pedro Nel",
+    "direccion": "Vr Esmeralda El Sardinas",
+    "ruta": "19"
+  },
+  {
+    "niu": "198121",
+    "nombre": "Bernal Iles Rosember",
+    "direccion": "Vr San Pedro De Guadalupe",
+    "ruta": "19"
+  },
+  {
+    "niu": "102921",
+    "nombre": "Jimenez Munoz Jorge Daniel",
+    "direccion": "Vr San Pedro De Guadalupe",
+    "ruta": "19"
+  },
+  {
+    "niu": "170724",
+    "nombre": "Escuela San Pedro Guadalupe",
+    "direccion": "Vr San Pedro De Guadalupe",
+    "ruta": "19"
+  },
+  {
+    "niu": "177083",
+    "nombre": "Morillo Tobar Jose Fortunato",
+    "direccion": "Br Restrepo Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "192861",
+    "nombre": "Montilla Romero Carlos Ferna",
+    "direccion": "Br Central Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "170680",
+    "nombre": "Cortes Rincon Jose Manuel",
+    "direccion": "Br Central Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "177040",
+    "nombre": "Meza Edmundo",
+    "direccion": "Br Progreso Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "100283",
+    "nombre": "Jose Francisco Segura Quinonez",
+    "direccion": "Br San Miguel Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "109414",
+    "nombre": "Hernandez Mora Victor Geovanny",
+    "direccion": "Br San Miguel Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "199349",
+    "nombre": "Pena Mojomboy Eufemia",
+    "direccion": "Br San Miguel Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "110672",
+    "nombre": "Hugo Alejandro Rivera",
+    "direccion": "Br Progreso Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "107382",
+    "nombre": "Castillo Aurelina",
+    "direccion": "Br Progreso Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "106868",
+    "nombre": "Castillo Portilla Carlos Fernando",
+    "direccion": "Br Restrepo Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "112517",
+    "nombre": "Hermida Gaviria Mercedes",
+    "direccion": "Br Restrepo Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "110240",
+    "nombre": "Claros Cortes Jeymi Orlando",
+    "direccion": "Br Restrepo Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "177031",
+    "nombre": "Meza Maria Rosario",
+    "direccion": "Br Restrepo Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "177030",
+    "nombre": "Cabezas Ceromeca Martha Mile",
+    "direccion": "Br Restrepo Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "104908",
+    "nombre": "Duque Segura Deisy Rocio",
+    "direccion": "Br Restrepo Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "105850",
+    "nombre": "Pantoja Rodriguez Jorge Anival",
+    "direccion": "Br Restrepo Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "177126",
+    "nombre": "Ibarra Amador",
+    "direccion": "Br Restrepo Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "177057",
+    "nombre": "Quinones Teofilo",
+    "direccion": "Br Central Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "177011",
+    "nombre": "Meza Cabezas Jhon Jairo",
+    "direccion": "Br Obrero Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "199434",
+    "nombre": "Lopez Flor Maria",
+    "direccion": "Br Obrero Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "198675",
+    "nombre": "Jimenez Cortez Adriana Disney",
+    "direccion": "Br Obrero Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "170533",
+    "nombre": "Mejia Gilberto",
+    "direccion": "Br Obrero Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "170612",
+    "nombre": "Taicuz Narvaez Nixon",
+    "direccion": "Br Del Palmar Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "177145",
+    "nombre": "Renza Herlinda",
+    "direccion": "Br Marco De La Plaza Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "107478",
+    "nombre": "Centro Educativo Divino Nino",
+    "direccion": "Br Platarina Puerto Limon",
+    "ruta": "19"
+  },
+  {
+    "niu": "201096",
+    "nombre": "Parador Trans Villagarzon Prop Htal",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "204958",
+    "nombre": "Diaz Ceballos Diana Catalina",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "202207",
+    "nombre": "Tisoy Juan",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "295125",
+    "nombre": "Mora Martinez Maria Magnola",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "203158",
+    "nombre": "Burbano Gomez Raul",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "205438",
+    "nombre": "Torres Lopera Monica Milena",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "203584",
+    "nombre": "Jurado Luna Jader Andres",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "204268",
+    "nombre": "Dorado Francy Yised",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "205387",
+    "nombre": "Valencia Ramirez Mabel",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "296527",
+    "nombre": "Moralez Sanet Sol",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "296297",
+    "nombre": "Solarte Enriquez Jose Daniel",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "295223",
+    "nombre": "Munoz Narvaez Dilmer Jhames",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "202242",
+    "nombre": "Andrade Jorge",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "202253",
+    "nombre": "Guerron Gustavo",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "205883",
+    "nombre": "Consorcio Infraestructura Sur",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "296531",
+    "nombre": "Nelson Dario Arteaga",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "202250",
+    "nombre": "Luna Gilberto",
+    "direccion": "Vr Porvenir",
+    "ruta": "20"
+  },
+  {
+    "niu": "205027",
+    "nombre": "Solarte Ceron Sandro Erney",
+    "direccion": "Vr La Cafelina",
+    "ruta": "20"
+  },
+  {
+    "niu": "205713",
+    "nombre": "Diaz Rodriguez Oliver Alexander",
+    "direccion": "Vr La Cafelina",
+    "ruta": "20"
+  },
+  {
+    "niu": "204206",
+    "nombre": "Coral Burbano Leonardo",
+    "direccion": "Vr La Cafelina",
+    "ruta": "20"
+  },
+  {
+    "niu": "296097",
+    "nombre": "Higinio Rubiel Burbano",
+    "direccion": "Vr La Cafelina",
+    "ruta": "20"
+  },
+  {
+    "niu": "201842",
+    "nombre": "Lopez Rico Juan Carlos",
+    "direccion": "Vr Castellana",
+    "ruta": "20"
+  },
+  {
+    "niu": "203185",
+    "nombre": "Martinez Garcia Robinson",
+    "direccion": "Vr Castellana",
+    "ruta": "20"
+  },
+  {
+    "niu": "202090",
+    "nombre": "Salcedo De Jacanamijoy Maria Irene",
+    "direccion": "Vr Castellana",
+    "ruta": "20"
+  },
+  {
+    "niu": "204318",
+    "nombre": "Lozano Totena Jose Domingo",
+    "direccion": "Vr Castellana",
+    "ruta": "20"
+  },
+  {
+    "niu": "200994",
+    "nombre": "Perez Lozada Rodrigo Herminsul",
+    "direccion": "Vr Castellana",
+    "ruta": "20"
+  },
+  {
+    "niu": "202646",
+    "nombre": "Arteaga Jose William",
+    "direccion": "Vr La Gaitana",
+    "ruta": "20"
+  },
+  {
+    "niu": "296149",
+    "nombre": "Cabrera Ortega Jailer Jimy",
+    "direccion": "Vr Castellana",
+    "ruta": "20"
+  },
+  {
+    "niu": "271595",
+    "nombre": "Trujillo De Carvajal Eneida",
+    "direccion": "Vr Castellana",
+    "ruta": "20"
+  },
+  {
+    "niu": "205655",
+    "nombre": "Diaz Lopez Carlos Alberto",
+    "direccion": "Vr Castellana",
+    "ruta": "20"
+  },
+  {
+    "niu": "200639",
+    "nombre": "Cortes Portilla Victor Senen",
+    "direccion": "Vr Santa Teresa",
+    "ruta": "20"
+  },
+  {
+    "niu": "204529",
+    "nombre": "Guanga Rosero Oscar Narciso",
+    "direccion": "Vr Castellana",
+    "ruta": "20"
+  },
+  {
+    "niu": "200599",
+    "nombre": "Juan Domingo Estrella Santacruz",
+    "direccion": "Vr Santa Teresa",
+    "ruta": "20"
+  },
+  {
+    "niu": "200641",
+    "nombre": "Jose Celestino Zuniga Arias",
+    "direccion": "Vr Santa Teresa",
+    "ruta": "20"
+  },
+  {
+    "niu": "205024",
+    "nombre": "Roman Clara",
+    "direccion": "Vr Santa Teresa",
+    "ruta": "20"
+  },
+  {
+    "niu": "200652",
+    "nombre": "Leonardo De Jesus Canas Zambrano",
+    "direccion": "Vr Santa Teresa",
+    "ruta": "20"
+  },
+  {
+    "niu": "201384",
+    "nombre": "Martinez Zambrano Carlos Anibal",
+    "direccion": "Vr Sinai",
+    "ruta": "20"
+  },
+  {
+    "niu": "200481",
+    "nombre": "Vasquez Segundo Manuel",
+    "direccion": "Br Fatima",
+    "ruta": "20"
+  },
+  {
+    "niu": "200709",
+    "nombre": "Rua Carmelina",
+    "direccion": "Br Dorado",
+    "ruta": "20"
+  },
+  {
+    "niu": "200752",
+    "nombre": "Carlosama Rigoberto",
+    "direccion": "Br Fatima",
+    "ruta": "20"
+  },
+  {
+    "niu": "200741",
+    "nombre": "Vallejo Miguel",
+    "direccion": "Br Dorado",
+    "ruta": "20"
+  },
+  {
+    "niu": "270540",
+    "nombre": "Ortiz Cisneros Jose Artemio",
+    "direccion": "Vr La Paz",
+    "ruta": "21"
+  },
+  {
+    "niu": "280658",
+    "nombre": "Muniesa Quintero Lino",
+    "direccion": "Vr La Paz",
+    "ruta": "21"
+  },
+  {
+    "niu": "271837",
+    "nombre": "Rojas Ortiz Yolima Amparo",
+    "direccion": "Vr La Paz",
+    "ruta": "21"
+  },
+  {
+    "niu": "206205",
+    "nombre": "Portilla Meneses Silvio Fernando",
+    "direccion": "Vr La Paz",
+    "ruta": "21"
+  },
+  {
+    "niu": "201770",
+    "nombre": "Arrata Echeverry Julio Camilo",
+    "direccion": "Vr La Palestina",
+    "ruta": "21"
+  },
+  {
+    "niu": "203271",
+    "nombre": "Marin Joven Fanny Andrea",
+    "direccion": "Vr Canangucho",
+    "ruta": "21"
+  },
+  {
+    "niu": "204373",
+    "nombre": "Resguardo Inga Wasipungo",
+    "direccion": "Vr Canangucho",
+    "ruta": "21"
+  },
+  {
+    "niu": "202813",
+    "nombre": "Diaz Burbano Jimmy Harold",
+    "direccion": "Vr Canangucho",
+    "ruta": "21"
+  },
+  {
+    "niu": "204381",
+    "nombre": "Resguardo Inga Wasipungo",
+    "direccion": "Vr Canangucho",
+    "ruta": "21"
+  },
+  {
+    "niu": "296009",
+    "nombre": "Agreda Joaquin",
+    "direccion": "Vr Canangucho",
+    "ruta": "21"
+  },
+  {
+    "niu": "204384",
+    "nombre": "Resguardo Inga Wasipungo",
+    "direccion": "Vr Canangucho",
+    "ruta": "21"
+  },
+  {
+    "niu": "202720",
+    "nombre": "Rodriguez Telmo",
+    "direccion": "Vr Canangucho",
+    "ruta": "21"
+  },
+  {
+    "niu": "202716",
+    "nombre": "Mora Marcos Antonio",
+    "direccion": "Vr Canangucho",
+    "ruta": "21"
+  },
+  {
+    "niu": "271445",
+    "nombre": "Jossa Morales Jesus Armando",
+    "direccion": "Vr Canangucho",
+    "ruta": "21"
+  },
+  {
+    "niu": "270589",
+    "nombre": "Chavez Maria Laura",
+    "direccion": "Vr Champagnat",
+    "ruta": "21"
+  },
+  {
+    "niu": "270602",
+    "nombre": "Portillo Mora Jose Luzberto",
+    "direccion": "Vr Champagnat",
+    "ruta": "21"
+  },
+  {
+    "niu": "204131",
+    "nombre": "Cenon Rodriguez Magnolia",
+    "direccion": "Vr Canangucho",
+    "ruta": "21"
+  },
+  {
+    "niu": "271528",
+    "nombre": "Gomez Ortiz Josely",
+    "direccion": "Vr San Isidro",
+    "ruta": "21"
+  },
+  {
+    "niu": "295958",
+    "nombre": "Mendoza Gomez Lina Maria",
+    "direccion": "Vr San Isidro",
+    "ruta": "21"
+  },
+  {
+    "niu": "205539",
+    "nombre": "Portilla Morales Mary Luz",
+    "direccion": "Vr San Isidro",
+    "ruta": "21"
+  },
+  {
+    "niu": "203795",
+    "nombre": "Vivas Maria Atala",
+    "direccion": "Vr San Isidro",
+    "ruta": "21"
+  },
+  {
+    "niu": "204219",
+    "nombre": "Obando Rojas Miller",
+    "direccion": "Vr La Jordania",
+    "ruta": "21"
+  },
+  {
+    "niu": "109167",
+    "nombre": "Carabali Jimenez Argeny Yolanda",
+    "direccion": "Vr El Mezon",
+    "ruta": "21"
+  },
+  {
+    "niu": "204951",
+    "nombre": "Lopez Vallejo Adriana Alexandra",
+    "direccion": "Vr San Isidro",
+    "ruta": "21"
+  },
+  {
+    "niu": "202663",
+    "nombre": "Calderon Correa Segundo Rosein",
+    "direccion": "Vr San Isidro",
+    "ruta": "21"
+  },
+  {
+    "niu": "202318",
+    "nombre": "Calderon Rosain",
+    "direccion": "Vr San Isidro",
+    "ruta": "21"
+  },
+  {
+    "niu": "202942",
+    "nombre": "Gonzalez Bravdao Gonzalo Homero",
+    "direccion": "Vr San Isidro",
+    "ruta": "21"
+  },
+  {
+    "niu": "201787",
+    "nombre": "Guerron Rosero Lorena Mercedes",
+    "direccion": "Br Centro",
+    "ruta": "21"
+  },
+  {
+    "niu": "271600",
+    "nombre": "Arteaga Leyton Victor Miguel",
+    "direccion": "Br Fatima",
+    "ruta": "21"
+  },
+  {
+    "niu": "290315",
+    "nombre": "Zambrano Martha Ligia",
+    "direccion": "Br Progreso",
+    "ruta": "21"
+  },
+  {
+    "niu": "203660",
+    "nombre": "Dulce Consuelo",
+    "direccion": "Br Fatima",
+    "ruta": "21"
+  },
+  {
+    "niu": "271083",
+    "nombre": "Portilla Morales Andrea Maide",
+    "direccion": "Br Fatima",
+    "ruta": "21"
+  },
+  {
+    "niu": "271669",
+    "nombre": "Condimentos Putumayo",
+    "direccion": "Br Progreso",
+    "ruta": "21"
+  },
+  {
+    "niu": "204506",
+    "nombre": "Joven Guzman Alba Rosa",
+    "direccion": "Br Progreso",
+    "ruta": "21"
+  },
+  {
+    "niu": "202131",
+    "nombre": "San Jose Ips Putumayo S.A.S",
+    "direccion": "Br Obrero",
+    "ruta": "21"
+  },
+  {
+    "niu": "205465",
+    "nombre": "Burbano Riascos Rosa Clemencia",
+    "direccion": "Br Macedonia",
+    "ruta": "21"
+  },
+  {
+    "niu": "204464",
+    "nombre": "Leiton Santander Franco Afranio",
+    "direccion": "Br Macedonia",
+    "ruta": "21"
+  },
+  {
+    "niu": "201997",
+    "nombre": "Hernandez Garcia Manuel Edmundo",
+    "direccion": "Br Macedonia",
+    "ruta": "21"
+  },
+  {
+    "niu": "295819",
+    "nombre": "Maria Margarita Camacho De Solarte",
+    "direccion": "Br Villa Del Prado",
+    "ruta": "21"
+  },
+  {
+    "niu": "295485",
+    "nombre": "Manquillo Plaza Sorayda",
+    "direccion": "Br Villa Del Prado",
+    "ruta": "21"
+  },
+  {
+    "niu": "202498",
+    "nombre": "Garcia Chavez Eleazar",
+    "direccion": "Br Eden",
+    "ruta": "21"
+  },
+  {
+    "niu": "203418",
+    "nombre": "Burbano Vallejo Raul Fernando",
+    "direccion": "Br Galilea",
+    "ruta": "22"
+  },
+  {
+    "niu": "295079",
+    "nombre": "Ruiz Timana Manuel Maria",
+    "direccion": "Br Las Villas",
+    "ruta": "22"
+  },
+  {
+    "niu": "205918",
+    "nombre": "Diaz Erazo Andrea Lorena",
+    "direccion": "Br Las Villas",
+    "ruta": "22"
+  },
+  {
+    "niu": "295912",
+    "nombre": "Rincon Chavez Ivoone Lucelly",
+    "direccion": "Br Las Villas",
+    "ruta": "22"
+  },
+  {
+    "niu": "296278",
+    "nombre": "Quintero Artunduaga Diego Alexander",
+    "direccion": "Br Minuto De Dios",
+    "ruta": "22"
+  },
+  {
+    "niu": "295755",
+    "nombre": "Chala Monraz Raquel",
+    "direccion": "Br Minuto De Dios",
+    "ruta": "22"
+  },
+  {
+    "niu": "296399",
+    "nombre": "Diaz Martinez Nelson Oswaldo",
+    "direccion": "Br San Luis",
+    "ruta": "22"
+  },
+  {
+    "niu": "202447",
+    "nombre": "Lagos Victor",
+    "direccion": "Br San Luis",
+    "ruta": "22"
+  },
+  {
+    "niu": "270148",
+    "nombre": "Delgado Maria Angelita",
+    "direccion": "Br San Luis",
+    "ruta": "22"
+  },
+  {
+    "niu": "272003",
+    "nombre": "Rodriguez Mariela",
+    "direccion": "Br Cafarnaum",
+    "ruta": "22"
+  },
+  {
+    "niu": "270702",
+    "nombre": "Figueroa Querubin",
+    "direccion": "Br Cafarnaum",
+    "ruta": "22"
+  },
+  {
+    "niu": "271164",
+    "nombre": "Meneses Fuertes Doris Mariela",
+    "direccion": "Br Palermo",
+    "ruta": "22"
+  },
+  {
+    "niu": "270621",
+    "nombre": "Delgado Nacianceno",
+    "direccion": "Br Cafarnaum",
+    "ruta": "22"
+  },
+  {
+    "niu": "290300",
+    "nombre": "Calvache Claros Yurany Elizabeth",
+    "direccion": "Br Cafarnaum",
+    "ruta": "22"
+  },
+  {
+    "niu": "201339",
+    "nombre": "David Mena Oliva Esperanza",
+    "direccion": "Br Cafarnaum",
+    "ruta": "22"
+  },
+  {
+    "niu": "270411",
+    "nombre": "Reyes Mora Miriam Ceciia",
+    "direccion": "Br Cafarnaum",
+    "ruta": "22"
+  },
+  {
+    "niu": "295020",
+    "nombre": "Calderon Quinche Camilo Orlando",
+    "direccion": "Br Cafarnaum",
+    "ruta": "22"
+  },
+  {
+    "niu": "290210",
+    "nombre": "Rincon Chavez Monica Esperan",
+    "direccion": "Br Cafarnaum",
+    "ruta": "22"
+  },
+  {
+    "niu": "290126",
+    "nombre": "Samboni Ijaji Marisol",
+    "direccion": "Br Villa Monica",
+    "ruta": "22"
+  },
+  {
+    "niu": "201961",
+    "nombre": "Joven Rosario",
+    "direccion": "Br La Esmeralda",
+    "ruta": "22"
+  },
+  {
+    "niu": "201953",
+    "nombre": "Gomez Maria Bertilda",
+    "direccion": "Br La Esmeralda",
+    "ruta": "22"
+  },
+  {
+    "niu": "203329",
+    "nombre": "Quiroz Claudia Patricia",
+    "direccion": "Br La Esmeralda",
+    "ruta": "22"
+  },
+  {
+    "niu": "201534",
+    "nombre": "Pinta Erazo Parmenides",
+    "direccion": "Br La Esmeralda",
+    "ruta": "22"
+  },
+  {
+    "niu": "296378",
+    "nombre": "Garcia Chaves Orlando Vidal",
+    "direccion": "Br Urcusique",
+    "ruta": "22"
+  },
+  {
+    "niu": "296434",
+    "nombre": "Chavez Pupiales Maria Luisa",
+    "direccion": "Br Urcusique",
+    "ruta": "22"
+  },
+  {
+    "niu": "271009",
+    "nombre": "Vasquez Antonio",
+    "direccion": "Vr El Eslabon",
+    "ruta": "22"
+  },
+  {
+    "niu": "204244",
+    "nombre": "Rodriguez Palacio Afranio",
+    "direccion": "Vr El Eslabon",
+    "ruta": "22"
+  },
+  {
+    "niu": "290122",
+    "nombre": "Calpa Mora Luis Eduardo",
+    "direccion": "Vr El Eslabon",
+    "ruta": "22"
+  },
+  {
+    "niu": "295613",
+    "nombre": "Medina Castano Sara Patricia",
+    "direccion": "Vr El Eslabon",
+    "ruta": "22"
+  },
+  {
+    "niu": "202343",
+    "nombre": "Iles Ignacio",
+    "direccion": "Vr El Eslabon",
+    "ruta": "22"
+  },
+  {
+    "niu": "202566",
+    "nombre": "Bastidas Bravo Hector Giovany",
+    "direccion": "Vr El Eslabon",
+    "ruta": "22"
+  },
+  {
+    "niu": "290330",
+    "nombre": "Jorge Ignacio Arias Vasquez",
+    "direccion": "Vr Candelaria",
+    "ruta": "22"
+  },
+  {
+    "niu": "295034",
+    "nombre": "Erazo Zambrano Wilson Javier",
+    "direccion": "Vr La Kofania",
+    "ruta": "22"
+  },
+  {
+    "niu": "271480",
+    "nombre": "Quistial Malpud Jose Milciad",
+    "direccion": "Vr La Kofania",
+    "ruta": "22"
+  },
+  {
+    "niu": "204768",
+    "nombre": "Lopez Descanse Carlos Andres",
+    "direccion": "Vr Villa Rica",
+    "ruta": "22"
+  },
+  {
+    "niu": "295510",
+    "nombre": "Barragan Soto Omar Hernan",
+    "direccion": "Vr San Jose Del Guineo",
+    "ruta": "22"
+  },
+  {
+    "niu": "203999",
+    "nombre": "Rincon Paz Jhon Jairo",
+    "direccion": "Br Los Alamos",
+    "ruta": "22"
+  },
+  {
+    "niu": "202153",
+    "nombre": "Zambrano Martha Ligia",
+    "direccion": "Br Rosadela",
+    "ruta": "22"
+  },
+  {
+    "niu": "202856",
+    "nombre": "Rodriguez Diaz Jose Jairo",
+    "direccion": "Br Los Alamos",
+    "ruta": "22"
+  },
+  {
+    "niu": "205798",
+    "nombre": "Brianez Malambo Dairo",
+    "direccion": "Br URB LOS ALAMOS",
+    "ruta": "22"
+  },
+  {
+    "niu": "201278",
+    "nombre": "Benavides Jimenez Carolina",
+    "direccion": "Br Los Alamos",
+    "ruta": "22"
+  },
+  {
+    "niu": "202098",
+    "nombre": "Arcos Ortega Yesika Adriana",
+    "direccion": "Vr Villa Santa Ana",
+    "ruta": "23"
+  },
+  {
+    "niu": "270834",
+    "nombre": "Milton Hernan Enriquez Pantoja",
+    "direccion": "Vr El Carmen",
+    "ruta": "23"
+  },
+  {
+    "niu": "205710",
+    "nombre": "Pantoja Portillo Mayerli Rocio",
+    "direccion": "Vr Villa Santa Ana",
+    "ruta": "23"
+  },
+  {
+    "niu": "295745",
+    "nombre": "Castellanos Garavito Jhon Fredy",
+    "direccion": "Vr El Carmen",
+    "ruta": "23"
+  },
+  {
+    "niu": "295000",
+    "nombre": "Delgado Lopez Rosario Del Pilar",
+    "direccion": "Vr El Carmen",
+    "ruta": "23"
+  },
+  {
+    "niu": "271962",
+    "nombre": "Cuchala Gelpud Digna Fecilita",
+    "direccion": "Vr Canangucho",
+    "ruta": "23"
+  },
+  {
+    "niu": "271988",
+    "nombre": "Calderon Amparo",
+    "direccion": "Vr Canangucho",
+    "ruta": "23"
+  },
+  {
+    "niu": "271561",
+    "nombre": "Criollo De Burgos Cleria Ber",
+    "direccion": "Vr Canangucho",
+    "ruta": "23"
+  },
+  {
+    "niu": "296305",
+    "nombre": "Garcia Munoz Gilberto",
+    "direccion": "Vr Canangucho",
+    "ruta": "23"
+  },
+  {
+    "niu": "270916",
+    "nombre": "Noe Lopez Valderrama",
+    "direccion": "Vr Canangucho",
+    "ruta": "23"
+  },
+  {
+    "niu": "295355",
+    "nombre": "Aereopuerto Villagarzon",
+    "direccion": "Vr Canangucho",
+    "ruta": "23"
+  },
+  {
+    "niu": "206204",
+    "nombre": "Direccion Antinarcoticos Policia Nacional",
+    "direccion": "Vr Canangucho",
+    "ruta": "23"
+  },
+  {
+    "niu": "204324",
+    "nombre": "Samudio Guerra Oscar Lisandro",
+    "direccion": "Br Canaan",
+    "ruta": "23"
+  },
+  {
+    "niu": "205895",
+    "nombre": "Jurado Jurado Jenny Alexandra",
+    "direccion": "Vr Canangucho",
+    "ruta": "23"
+  },
+  {
+    "niu": "205871",
+    "nombre": "Buitrago Figueroa Claudia Margoth",
+    "direccion": "Vr Santa Juliana",
+    "ruta": "23"
+  },
+  {
+    "niu": "205622",
+    "nombre": "Lopez Narvaez Jeisson Norbel",
+    "direccion": "Vr Santa Juliana",
+    "ruta": "23"
+  },
+  {
+    "niu": "270690",
+    "nombre": "Ortiz Emerita",
+    "direccion": "Vr Santa Juliana",
+    "ruta": "23"
+  },
+  {
+    "niu": "270667",
+    "nombre": "Pianda Jose Hernando",
+    "direccion": "Vr Santa Juliana",
+    "ruta": "23"
+  },
+  {
+    "niu": "290003",
+    "nombre": "Cabrera Estrella Jose Vicente",
+    "direccion": "Vr Santa Juliana",
+    "ruta": "23"
+  },
+  {
+    "niu": "203696",
+    "nombre": "Madronero Hernandez Luz Esther",
+    "direccion": "Vr La Esperanza",
+    "ruta": "23"
+  },
+  {
+    "niu": "201825",
+    "nombre": "Guerrero Ruby Patricia",
+    "direccion": "Br Los Diamantes",
+    "ruta": "23"
+  },
+  {
+    "niu": "201805",
+    "nombre": "Estrella Arteaga Roberto",
+    "direccion": "Br Los Diamantes",
+    "ruta": "23"
+  },
+  {
+    "niu": "296478",
+    "nombre": "Erazo Vallejo Neftali",
+    "direccion": "Br Villa Del Sol",
+    "ruta": "23"
+  },
+  {
+    "niu": "296267",
+    "nombre": "Delgado Caicedo Heider Antonio",
+    "direccion": "Br Villa Del Sol",
+    "ruta": "23"
+  },
+  {
+    "niu": "295111",
+    "nombre": "Mena Obando Olga Fanny",
+    "direccion": "Br Villa Del Sol",
+    "ruta": "23"
+  },
+  {
+    "niu": "202742",
+    "nombre": "Munoz Lozada Rosalba",
+    "direccion": "Br Villa Paz",
+    "ruta": "23"
+  },
+  {
+    "niu": "206199",
+    "nombre": "Cardona Cardona Luz Marina",
+    "direccion": "Br Urbanizacion El Porvenir",
+    "ruta": "23"
+  },
+  {
+    "niu": "206163",
+    "nombre": "Morales Casanova Angel Adelmo",
+    "direccion": "Br Urbanizacion El Porvenir",
+    "ruta": "23"
+  },
+  {
+    "niu": "206168",
+    "nombre": "Llanten Garzon Maria Mery",
+    "direccion": "Br Urbanizacion El Porvenir",
+    "ruta": "23"
+  },
+  {
+    "niu": "206037",
+    "nombre": "Uribe Erazo Angie Paola",
+    "direccion": "Urb El Porvenir",
+    "ruta": "23"
+  },
+  {
+    "niu": "206162",
+    "nombre": "Loaiza Cabrera Carlos Andres",
+    "direccion": "Br Urbanizacion El Porvenir",
+    "ruta": "23"
+  },
+  {
+    "niu": "205920",
+    "nombre": "Lopez Quintero Gimena Patricia",
+    "direccion": "Br Urbanizacion El Porvenir",
+    "ruta": "23"
+  },
+  {
+    "niu": "205925",
+    "nombre": "Calixmarialucila",
+    "direccion": "Br Urbanizacion El Porvenir",
+    "ruta": "23"
+  },
+  {
+    "niu": "206014",
+    "nombre": "Quintero Salazar Rubi Lorena",
+    "direccion": "Br Urbanizacion El Porvenir",
+    "ruta": "23"
+  },
+  {
+    "niu": "205916",
+    "nombre": "Yela Ponce Narcy Milena",
+    "direccion": "Br Urbanizacion El Porvenir",
+    "ruta": "23"
+  },
+  {
+    "niu": "296291",
+    "nombre": "Eraso Nestor Fredy",
+    "direccion": "Br San Diego",
+    "ruta": "23"
+  },
+  {
+    "niu": "296452",
+    "nombre": "Montenegro Jorge Anibal",
+    "direccion": "Br San Diego",
+    "ruta": "23"
+  },
+  {
+    "niu": "271213",
+    "nombre": "Correa Galvis Liliana",
+    "direccion": "Br San Diego",
+    "ruta": "23"
+  },
+  {
+    "niu": "271864",
+    "nombre": "Mavisoy Josa Luis Antonio",
+    "direccion": "Br 29 De Mayo",
+    "ruta": "23"
+  },
+  {
+    "niu": "280354",
+    "nombre": "Restrepo Gaviria Leonel A",
+    "direccion": "Br Cristo Rey",
+    "ruta": "23"
+  },
+  {
+    "niu": "200680",
+    "nombre": "Chamorro Gomez Camila Andrea",
+    "direccion": "Br Canaan",
+    "ruta": "23"
+  },
+  {
+    "niu": "204947",
+    "nombre": "Imbacuan Solarte Dany Daniel",
+    "direccion": "Vr La Cabana",
+    "ruta": "24"
+  },
+  {
+    "niu": "204769",
+    "nombre": "Jacanamejoy Buesaquillo Maria Yolanda",
+    "direccion": "Vr La Cabana",
+    "ruta": "24"
+  },
+  {
+    "niu": "204851",
+    "nombre": "Buesaquillo Blanca Nuvia Patricia",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "206040",
+    "nombre": "Jacanamejoy Buesaquillo Juan Pedro",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "204849",
+    "nombre": "Mutumbajoy Maximino",
+    "direccion": "Vr La Cabana",
+    "ruta": "24"
+  },
+  {
+    "niu": "290209",
+    "nombre": "Robledo Erazo Eduardo",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "290222",
+    "nombre": "Pai Garcia Edgar",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "290208",
+    "nombre": "Rubiano Franco Rosa Tulia",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "295674",
+    "nombre": "Chavez Agreda Jhon Jairo",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "202615",
+    "nombre": "Garcia Churta Edison Armando",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "202753",
+    "nombre": "Nastacuas Canticus Maria Lestenia",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "290175",
+    "nombre": "Garcia Cabrera Blanca Alidia",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "201463",
+    "nombre": "David Meza Vidal",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "200295",
+    "nombre": "Goyes Segundo Juan",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "200347",
+    "nombre": "Maria Alicia Viviana",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "200388",
+    "nombre": "Riascos Wilson Leonel",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "200289",
+    "nombre": "Becoche Guetio Luis Hernan",
+    "direccion": "Vr San Fidel",
+    "ruta": "24"
+  },
+  {
+    "niu": "296194",
+    "nombre": "Orozco Londono Jaime Hernan",
+    "direccion": "Vr San Vicente Del Palmar",
+    "ruta": "24"
+  },
+  {
+    "niu": "296458",
+    "nombre": "Jimenez Pena German",
+    "direccion": "Vr San Vicente Del Palmar",
+    "ruta": "24"
+  },
+  {
+    "niu": "280421",
+    "nombre": "Chamorro Beatriz",
+    "direccion": "Vr San Vicente Del Palmar",
+    "ruta": "24"
+  },
+  {
+    "niu": "204828",
+    "nombre": "Delgado Cruz Justo German",
+    "direccion": "Vr Albania",
+    "ruta": "24"
+  },
+  {
+    "niu": "296017",
+    "nombre": "Oliva Descanse Deiby Fabian",
+    "direccion": "Vr Albania",
+    "ruta": "24"
+  },
+  {
+    "niu": "280356",
+    "nombre": "Rodriguez Benito",
+    "direccion": "Vr Albania",
+    "ruta": "24"
+  },
+  {
+    "niu": "280312",
+    "nombre": "Rodriguez Rodrigo",
+    "direccion": "Vr Albania",
+    "ruta": "24"
+  },
+  {
+    "niu": "280296",
+    "nombre": "Ordonez Hermencia",
+    "direccion": "Vr Albania",
+    "ruta": "24"
+  },
+  {
+    "niu": "201189",
+    "nombre": "Bastidas Diaz Jose Aureliano",
+    "direccion": "Vr SIMON BOLIVAR",
+    "ruta": "24"
+  },
+  {
+    "niu": "280348",
+    "nombre": "Guacan Jose",
+    "direccion": "Vr SIMON BOLIVAR",
+    "ruta": "24"
+  },
+  {
+    "niu": "280283",
+    "nombre": "Restrepo Sigifredo",
+    "direccion": "Vr SIMON BOLIVAR",
+    "ruta": "24"
+  },
+  {
+    "niu": "202137",
+    "nombre": "Palco Poscue Victor Olmedo",
+    "direccion": "Br Los Prados Puerto Umbria",
+    "ruta": "24"
+  },
+  {
+    "niu": "280137",
+    "nombre": "Culcha Chingal Rubiela",
+    "direccion": "Br Centro Puerto Umbria",
+    "ruta": "24"
+  },
+  {
+    "niu": "280175",
+    "nombre": "Burbano Jamauca Luz Ayda",
+    "direccion": "Br Obrero",
+    "ruta": "24"
+  },
+  {
+    "niu": "280035",
+    "nombre": "Hernandez Lasso Maria Nelly",
+    "direccion": "Br Obrero",
+    "ruta": "24"
+  },
+  {
+    "niu": "296054",
+    "nombre": "Toro Londono Ruby Seneyda",
+    "direccion": "Br Centro Puerto Umbria",
+    "ruta": "24"
+  },
+  {
+    "niu": "203777",
+    "nombre": "Benavides Caicedo Leyder Rolando",
+    "direccion": "Br Los Pomos Puerto Umbria",
+    "ruta": "24"
+  },
+  {
+    "niu": "280579",
+    "nombre": "Corregimiento Puerto Umbria",
+    "direccion": "Br Los Pomos Puerto Umbria",
+    "ruta": "24"
+  },
+  {
+    "niu": "280225",
+    "nombre": "Guacan Ramon",
+    "direccion": "Br Los Pomos Puerto Umbria",
+    "ruta": "24"
+  },
+  {
+    "niu": "280191",
+    "nombre": "Benavides Caicedo Ruth Rocio",
+    "direccion": "Br Los Pomos Puerto Umbria",
+    "ruta": "24"
+  },
+  {
+    "niu": "204008",
+    "nombre": "Enriquez David Ana Zuleima",
+    "direccion": "Br Los Pomos Puerto Umbria",
+    "ruta": "24"
+  },
+  {
+    "niu": "280094",
+    "nombre": "Pinto Arce Enelia",
+    "direccion": "Br Villa Del Rio Umbria",
+    "ruta": "24"
+  },
+  {
+    "niu": "201541",
+    "nombre": "Cabrera De Burgos Maria Evila",
+    "direccion": "Br Villa Del Rio Umbria",
+    "ruta": "24"
+  },
+  {
+    "niu": "280592",
+    "nombre": "Cuasanchir De B. Maria Del C",
+    "direccion": "Br Villa Del Rio Umbria",
+    "ruta": "24"
+  },
+  {
+    "niu": "201721",
+    "nombre": "Jajoy Quinchoa Segundo Jorge",
+    "direccion": "Vr Naranjito",
+    "ruta": "25"
+  },
+  {
+    "niu": "295126",
+    "nombre": "Martinez Hernandez Maria Ros",
+    "direccion": "Vr Naranjito",
+    "ruta": "25"
+  },
+  {
+    "niu": "296359",
+    "nombre": "Sevillano Sevillano Zeneida",
+    "direccion": "Vr Naranjito",
+    "ruta": "25"
+  },
+  {
+    "niu": "280468",
+    "nombre": "Vargas Arcadio",
+    "direccion": "Vr Santa Rosa De Juanambu",
+    "ruta": "25"
+  },
+  {
+    "niu": "205645",
+    "nombre": "Ulcue Collasos Jacobo",
+    "direccion": "Vr Santa Rosa De Juanambu",
+    "ruta": "25"
+  },
+  {
+    "niu": "280465",
+    "nombre": "Vargas Floresmiro",
+    "direccion": "Vr Santa Rosa De Juanambu",
+    "ruta": "25"
+  },
+  {
+    "niu": "205003",
+    "nombre": "Vargas Garcia Lili Soraya",
+    "direccion": "Vr Rio Blanco",
+    "ruta": "25"
+  },
+  {
+    "niu": "280521",
+    "nombre": "Taquinaz Alirio",
+    "direccion": "Vr Rio Blanco",
+    "ruta": "25"
+  },
+  {
+    "niu": "280478",
+    "nombre": "Pantoja Hermes",
+    "direccion": "Vr La Palanca",
+    "ruta": "25"
+  },
+  {
+    "niu": "206101",
+    "nombre": "Mosquera Astudillo Jairo",
+    "direccion": "Vr La Palanca",
+    "ruta": "25"
+  },
+  {
+    "niu": "280529",
+    "nombre": "Cortez Eugenio",
+    "direccion": "Vr La Palanca",
+    "ruta": "25"
+  },
+  {
+    "niu": "205980",
+    "nombre": "Emerald Energy Plc Campo",
+    "direccion": "Vr La Palanca",
+    "ruta": "25"
+  },
+  {
+    "niu": "280501",
+    "nombre": "Diaz Jose Hipacio",
+    "direccion": "Vr La Palanca",
+    "ruta": "25"
+  },
+  {
+    "niu": "202371",
+    "nombre": "Anzasoy Oliver Lupercio",
+    "direccion": "Vr La Palanca",
+    "ruta": "25"
+  },
+  {
+    "niu": "203119",
+    "nombre": "Chamorro Bastidas Ismael Bayardo",
+    "direccion": "Vr Alto Mecaya",
+    "ruta": "25"
+  },
+  {
+    "niu": "296411",
+    "nombre": "Lopez Cuaichar Efren Arturo",
+    "direccion": "Vr Alto Mecaya",
+    "ruta": "25"
+  },
+  {
+    "niu": "202141",
+    "nombre": "Estrada Viana Wilmer Eveiro",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "203091",
+    "nombre": "Perenguez Melo Ayda Sonia",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "295422",
+    "nombre": "Ijaji Cordoba Martha",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "205002",
+    "nombre": "Tisoy Pereguez Fredy Alexander",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "280256",
+    "nombre": "Melo Roberto Saul",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "204399",
+    "nombre": "Melo Iles Derlyn Brisbany",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "280255",
+    "nombre": "Zamora Esperanza",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "203937",
+    "nombre": "Sevillano Cortez Ramiro",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "280259",
+    "nombre": "Zambrano Arcos Nancy Margoth",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "201340",
+    "nombre": "Ruales Tenorio Leidy Carolina",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "295611",
+    "nombre": "Perenguez De Nupan Maria Alb",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "295037",
+    "nombre": "Zambrano Arcos Jorge Gustavo",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "205886",
+    "nombre": "Celis Arias Jhon Fredy",
+    "direccion": "Vr Oroyaco",
+    "ruta": "25"
+  },
+  {
+    "niu": "280436",
+    "nombre": "Jimenez Luis",
+    "direccion": "Vr Campo Alegre",
+    "ruta": "25"
+  },
+  {
+    "niu": "203891",
+    "nombre": "Rico Castro Cenaida",
+    "direccion": "Vr Islandia",
+    "ruta": "25"
+  },
+  {
+    "niu": "271259",
+    "nombre": "Agreda Diaz Lida Geniz",
+    "direccion": "Vr Islandia",
+    "ruta": "25"
+  },
+  {
+    "niu": "280563",
+    "nombre": "Ortiz Luna Amparo",
+    "direccion": "Vr Villa Hermosa",
+    "ruta": "25"
+  },
+  {
+    "niu": "296061",
+    "nombre": "Emerald Energy Plc",
+    "direccion": "Vr La Mariposa",
+    "ruta": "25"
+  },
+  {
+    "niu": "200668",
+    "nombre": "Segundo Jairo Fernandez Gomez",
+    "direccion": "Vr La Mariposa",
+    "ruta": "25"
+  },
+  {
+    "niu": "280132",
+    "nombre": "Becerra Ramona",
+    "direccion": "Br La Esmeralda",
+    "ruta": "25"
+  },
+  {
+    "niu": "280025",
+    "nombre": "Ortiz Jesus",
+    "direccion": "Br Centro",
+    "ruta": "25"
+  },
+  {
+    "niu": "280189",
+    "nombre": "Martinez Carmelo",
+    "direccion": "Br Centro",
+    "ruta": "25"
+  },
+  {
+    "niu": "271686",
+    "nombre": "Benavides Vallejo Luis Edilberto",
+    "direccion": "Br Centro Puerto Umbria",
+    "ruta": "25"
+  },
+  {
+    "niu": "280199",
+    "nombre": "Arteaga Lola",
+    "direccion": "Br Progreso Puerto Umbria",
+    "ruta": "25"
+  },
+  {
+    "niu": "280064",
+    "nombre": "Sigindioy Javier",
+    "direccion": "Br Progreso Puerto Umbria",
+    "ruta": "25"
+  }
+]

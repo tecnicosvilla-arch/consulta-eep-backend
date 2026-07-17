@@ -1,0 +1,339 @@
+{
+  "running": false,
+  "progress": 41,
+  "total": 41,
+  "results": [
+    {
+      "niu": "270540",
+      "nombre": "Ortiz Cisneros Jose Artemio",
+      "direccion": "Vr La Paz",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Ortiz Cisneros Jose Artemio (270540)"
+    },
+    {
+      "niu": "280658",
+      "nombre": "Muniesa Quintero Lino",
+      "direccion": "Vr La Paz",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Muniesa Quintero Lino (280658)"
+    },
+    {
+      "niu": "271837",
+      "nombre": "Rojas Ortiz Yolima Amparo",
+      "direccion": "Vr La Paz",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Rojas Ortiz Yolima Amparo (271837)"
+    },
+    {
+      "niu": "206205",
+      "nombre": "Portilla Meneses Silvio Fernando",
+      "direccion": "Vr La Paz",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Portilla Meneses Silvio Fernando (206205)"
+    },
+    {
+      "niu": "201770",
+      "nombre": "Arrata Echeverry Julio Camilo",
+      "direccion": "Vr La Palestina",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Arrata Echeverry Julio Camilo (201770)"
+    },
+    {
+      "niu": "203271",
+      "nombre": "Marin Joven Fanny Andrea",
+      "direccion": "Vr Canangucho",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Marin Joven Fanny Andrea (203271)"
+    },
+    {
+      "niu": "204373",
+      "nombre": "Resguardo Inga Wasipungo",
+      "direccion": "Vr Canangucho",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Resguardo Inga Wasipungo (204373)"
+    },
+    {
+      "niu": "202813",
+      "nombre": "Diaz Burbano Jimmy Harold",
+      "direccion": "Vr Canangucho",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Diaz Burbano Jimmy Harold (202813)"
+    },
+    {
+      "niu": "204381",
+      "nombre": "Resguardo Inga Wasipungo",
+      "direccion": "Vr Canangucho",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Resguardo Inga Wasipungo (204381)"
+    },
+    {
+      "niu": "296009",
+      "nombre": "Agreda Joaquin",
+      "direccion": "Vr Canangucho",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Agreda Joaquin (296009)"
+    },
+    {
+      "niu": "204384",
+      "nombre": "Resguardo Inga Wasipungo",
+      "direccion": "Vr Canangucho",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Resguardo Inga Wasipungo (204384)"
+    },
+    {
+      "niu": "202720",
+      "nombre": "Rodriguez Telmo",
+      "direccion": "Vr Canangucho",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Rodriguez Telmo (202720)"
+    },
+    {
+      "niu": "202716",
+      "nombre": "Mora Marcos Antonio",
+      "direccion": "Vr Canangucho",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Mora Marcos Antonio (202716)"
+    },
+    {
+      "niu": "271445",
+      "nombre": "Jossa Morales Jesus Armando",
+      "direccion": "Vr Canangucho",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Jossa Morales Jesus Armando (271445)"
+    },
+    {
+      "niu": "270589",
+      "nombre": "Chavez Maria Laura",
+      "direccion": "Vr Champagnat",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Chavez Maria Laura (270589)"
+    },
+    {
+      "niu": "270602",
+      "nombre": "Portillo Mora Jose Luzberto",
+      "direccion": "Vr Champagnat",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Portillo Mora Jose Luzberto (270602)"
+    },
+    {
+      "niu": "204131",
+      "nombre": "Cenon Rodriguez Magnolia",
+      "direccion": "Vr Canangucho",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Cenon Rodriguez Magnolia (204131)"
+    },
+    {
+      "niu": "271528",
+      "nombre": "Gomez Ortiz Josely",
+      "direccion": "Vr San Isidro",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Gomez Ortiz Josely (271528)"
+    },
+    {
+      "niu": "295958",
+      "nombre": "Mendoza Gomez Lina Maria",
+      "direccion": "Vr San Isidro",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Mendoza Gomez Lina Maria (295958)"
+    },
+    {
+      "niu": "205539",
+      "nombre": "Portilla Morales Mary Luz",
+      "direccion": "Vr San Isidro",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Portilla Morales Mary Luz (205539)"
+    },
+    {
+      "niu": "203795",
+      "nombre": "Vivas Maria Atala",
+      "direccion": "Vr San Isidro",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Vivas Maria Atala (203795)"
+    },
+    {
+      "niu": "204219",
+      "nombre": "Obando Rojas Miller",
+      "direccion": "Vr La Jordania",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Obando Rojas Miller (204219)"
+    },
+    {
+      "niu": "109167",
+      "nombre": "Carabali Jimenez Argeny Yolanda",
+      "direccion": "Vr El Mezon",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Carabali Jimenez Argeny Yolanda (109167)"
+    },
+    {
+      "niu": "204951",
+      "nombre": "Lopez Vallejo Adriana Alexandra",
+      "direccion": "Vr San Isidro",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Lopez Vallejo Adriana Alexandra (204951)"
+    },
+    {
+      "niu": "202663",
+      "nombre": "Calderon Correa Segundo Rosein",
+      "direccion": "Vr San Isidro",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Calderon Correa Segundo Rosein (202663)"
+    },
+    {
+      "niu": "202318",
+      "nombre": "Calderon Rosain",
+      "direccion": "Vr San Isidro",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Calderon Rosain (202318)"
+    },
+    {
+      "niu": "202942",
+      "nombre": "Gonzalez Bravdao Gonzalo Homero",
+      "direccion": "Vr San Isidro",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Gonzalez Bravdao Gonzalo Homero (202942)"
+    },
+    {
+      "niu": "201787",
+      "nombre": "Guerron Rosero Lorena Mercedes",
+      "direccion": "Br Centro",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Guerron Rosero Lorena Mercedes (201787)"
+    },
+    {
+      "niu": "271600",
+      "nombre": "Arteaga Leyton Victor Miguel",
+      "direccion": "Br Fatima",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Arteaga Leyton Victor Miguel (271600)"
+    },
+    {
+      "niu": "290315",
+      "nombre": "Zambrano Martha Ligia",
+      "direccion": "Br Progreso",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Zambrano Martha Ligia (290315)"
+    },
+    {
+      "niu": "203660",
+      "nombre": "Dulce Consuelo",
+      "direccion": "Br Fatima",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Dulce Consuelo (203660)"
+    },
+    {
+      "niu": "271083",
+      "nombre": "Portilla Morales Andrea Maide",
+      "direccion": "Br Fatima",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Portilla Morales Andrea Maide (271083)"
+    },
+    {
+      "niu": "271669",
+      "nombre": "Condimentos Putumayo",
+      "direccion": "Br Progreso",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Condimentos Putumayo (271669)"
+    },
+    {
+      "niu": "204506",
+      "nombre": "Joven Guzman Alba Rosa",
+      "direccion": "Br Progreso",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Joven Guzman Alba Rosa (204506)"
+    },
+    {
+      "niu": "202131",
+      "nombre": "San Jose Ips Putumayo S.A.S",
+      "direccion": "Br Obrero",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "San Jose Ips Putumayo S.A.S (202131)"
+    },
+    {
+      "niu": "205465",
+      "nombre": "Burbano Riascos Rosa Clemencia",
+      "direccion": "Br Macedonia",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Burbano Riascos Rosa Clemencia (205465)"
+    },
+    {
+      "niu": "204464",
+      "nombre": "Leiton Santander Franco Afranio",
+      "direccion": "Br Macedonia",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Leiton Santander Franco Afranio (204464)"
+    },
+    {
+      "niu": "201997",
+      "nombre": "Hernandez Garcia Manuel Edmundo",
+      "direccion": "Br Macedonia",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Hernandez Garcia Manuel Edmundo (201997)"
+    },
+    {
+      "niu": "295819",
+      "nombre": "Maria Margarita Camacho De Solarte",
+      "direccion": "Br Villa Del Prado",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Maria Margarita Camacho De Solarte (295819)"
+    },
+    {
+      "niu": "295485",
+      "nombre": "Manquillo Plaza Sorayda",
+      "direccion": "Br Villa Del Prado",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Manquillo Plaza Sorayda (295485)"
+    },
+    {
+      "niu": "202498",
+      "nombre": "Garcia Chavez Eleazar",
+      "direccion": "Br Eden",
+      "ultimoPeriodo": "Junio 2026",
+      "pagado": false,
+      "diagnostico_seleccion": "Garcia Chavez Eleazar (202498)"
+    }
+  ],
+  "startedAt": "2026-07-17T00:29:40.885Z",
+  "finishedAt": "2026-07-17T00:32:46.527Z",
+  "error": null,
+  "ruta": "21"
+}
