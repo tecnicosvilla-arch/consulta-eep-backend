@@ -9,6 +9,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection (servidor sigue corriendo):', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception (servidor sigue corriendo):', err);
+});
+
 // ---------- CONFIG ----------
 const LOGIN_URL = process.env.PORTAL_LOGIN_URL ||
   'https://appthunder.conoracle.com/ords/r/enerputu/facturas-eep/login';
@@ -236,7 +243,14 @@ async function runScanJob(job, targetNius) {
     return;
   }
 
-  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
+  } catch (e) {
+    job.error = 'No se pudo abrir el navegador: ' + e.message;
+    return;
+  }
+
   const context = await browser.newContext();
   const page = await context.newPage();
 
