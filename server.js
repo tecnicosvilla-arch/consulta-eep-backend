@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { chromium } = require('playwright');
+const cheerio = require('cheerio');
 const fs = require('fs');
 const path = require('path');
 
@@ -17,8 +17,6 @@ process.on('uncaughtException', (err) => {
 });
 
 // ---------- CONFIG ----------
-const LOGIN_URL = process.env.PORTAL_LOGIN_URL ||
-  'https://appthunder.conoracle.com/ords/r/enerputu/facturas-eep/login';
 const USERNAME = process.env.PORTAL_USER;
 const PASSWORD = process.env.PORTAL_PASS;
 
@@ -84,73 +82,203 @@ function recordSharedResult(niu, data) {
   persistSharedResults();
 }
 
-// Element IDs taken directly from the real page HTML (confirm if the portal changes)
-const SEL = {
-  loginUser: '#P9999_USERNAME',
-  loginPass: '#P9999_PASSWORD',
-  loginBtn: '#B1694315956165633214',
-  lovBtn: '#P1_INFOCLIE_lov_btn',
-  consultarBtn: '#B1683296795905620921',
-};
+// ---------- APEX BASE ----------
+const APEX_BASE = 'https://appthunder.conoracle.com/ords';
+const LOGIN_PAGE_URL = process.env.PORTAL_LOGIN_URL || `${APEX_BASE}/r/enerputu/facturas-eep/login`;
 
-// ---------- STATE: job queue (only ONE Chromium runs at a time, everyone else queues) ----------
-let jobs = {}; // jobId -> job object
-let queue = []; // array of { jobId, targetNius }
-let processingQueue = false;
-
-function makeJobId() {
-  return 'job_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-}
-
-function pruneOldJobs() {
-  const ids = Object.keys(jobs).filter((id) => jobs[id].status === 'done' || jobs[id].status === 'error');
-  if (ids.length > 25) {
-    ids
-      .sort((a, b) => new Date(jobs[a].finishedAt || 0) - new Date(jobs[b].finishedAt || 0))
-      .slice(0, ids.length - 25)
-      .forEach((id) => delete jobs[id]);
+// ---------- Minimal cookie jar (Node's fetch has no built-in cookie jar) ----------
+class CookieJar {
+  constructor() { this.cookies = new Map(); }
+  update(setCookieHeaders) {
+    (setCookieHeaders || []).forEach((sc) => {
+      const pair = sc.split(';')[0];
+      const idx = pair.indexOf('=');
+      if (idx > 0) this.cookies.set(pair.slice(0, idx).trim(), pair.slice(idx + 1).trim());
+    });
+  }
+  header() {
+    return Array.from(this.cookies.entries()).map(([k, v]) => `${k}=${v}`).join('; ');
   }
 }
 
-function createJob(targetNius, label) {
-  const jobId = makeJobId();
-  jobs[jobId] = {
-    id: jobId,
-    status: 'queued',
-    progress: 0,
-    total: targetNius.length,
-    results: [],
-    queuedAt: new Date().toISOString(),
-    startedAt: null,
-    finishedAt: null,
-    error: null,
-    ruta: label || 'todas',
+async function httpRequest(url, options, jar) {
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    Cookie: jar.header(),
+    ...(options.headers || {}),
   };
-  queue.push({ jobId, targetNius });
-  processQueue();
-  pruneOldJobs();
-  return jobId;
-}
-
-function queuePosition(jobId) {
-  const idx = queue.findIndex((q) => q.jobId === jobId);
-  return idx === -1 ? null : idx + 1;
-}
-
-async function processQueue() {
-  if (processingQueue) return;
-  processingQueue = true;
-  while (queue.length > 0) {
-    const { jobId, targetNius } = queue.shift();
-    const job = jobs[jobId];
-    if (!job) continue;
-    job.status = 'running';
-    job.startedAt = new Date().toISOString();
-    await runScanJob(job, targetNius);
-    job.status = job.error ? 'error' : 'done';
-    job.finishedAt = new Date().toISOString();
+  const res = await fetch(url, { ...options, headers, redirect: 'manual' });
+  if (typeof res.headers.getSetCookie === 'function') {
+    jar.update(res.headers.getSetCookie());
+  } else if (res.headers.raw) {
+    jar.update(res.headers.raw()['set-cookie']);
   }
-  processingQueue = false;
+  return res;
+}
+
+// Follows redirects manually (so cookies set at each hop are captured), returns the final HTML body.
+async function followAndGetHtml(res, jar) {
+  let current = res;
+  let hops = 0;
+  while (current.status >= 300 && current.status < 400 && hops < 5) {
+    const location = current.headers.get('location');
+    if (!location) break;
+    const nextUrl = new URL(location, APEX_BASE).toString();
+    current = await httpRequest(nextUrl, { method: 'GET' }, jar);
+    hops++;
+  }
+  return current.text();
+}
+
+// Parses the hidden APEX form fields out of any page (login or home) needed to submit forms.
+function parsePageState(html) {
+  const $ = cheerio.load(html);
+  const state = {
+    flowId: $('#pFlowId').attr('value'),
+    flowStepId: $('#pFlowStepId').attr('value'),
+    instance: $('#pInstance').attr('value'),
+    submissionId: $('#pPageSubmissionId').attr('value'),
+    protectedVal: $('#pPageItemsProtected').attr('value'),
+    salt: $('#pSalt').attr('value'),
+    context: $('#pContext').attr('value'),
+  };
+  // The popup LOV's ajaxIdentifier lives inside an inline <script>, e.g.
+  // apex.widget.popupLov({"itemId":"P1_INFOCLIE","ajaxIdentifier":"XXXX", ...})
+  const scriptText = $('script').map((i, el) => $(el).html()).get().join('\n');
+  const m = scriptText.match(/"itemId":"P1_INFOCLIE","ajaxIdentifier":"([^"]+)"/);
+  state.ajaxIdentifier = m ? m[1].replace(/\\\//g, '/') : null;
+  return state;
+}
+
+async function httpLogin(jar) {
+  let res = await httpRequest(LOGIN_PAGE_URL, { method: 'GET' }, jar);
+  const loginHtml = await followAndGetHtml(res, jar);
+  const state = parsePageState(loginHtml);
+
+  const body = new URLSearchParams();
+  body.set('p_flow_id', state.flowId);
+  body.set('p_flow_step_id', state.flowStepId);
+  body.set('p_instance', state.instance);
+  body.set('p_request', 'LOGIN');
+  body.set('p_reload_on_submit', 'S');
+  body.set('p_page_submission_id', state.submissionId);
+  body.set('p_json', JSON.stringify({
+    pageItems: {
+      itemsToSubmit: [
+        { n: 'P9999_USERNAME', v: USERNAME },
+        { n: 'P9999_PASSWORD', v: PASSWORD },
+        { n: 'P9999_REMEMBER', v: 'N' },
+      ],
+      protected: state.protectedVal,
+      rowVersion: '',
+      formRegionChecksums: [],
+    },
+    salt: state.salt,
+  }));
+
+  const acceptUrl = `${APEX_BASE}/wwv_flow.accept?p_context=${encodeURIComponent(state.context)}`;
+  res = await httpRequest(acceptUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'X-Requested-With': 'XMLHttpRequest',
+      Accept: 'application/json, text/javascript, */*; q=0.01',
+    },
+    body: body.toString(),
+  }, jar);
+
+  const homeHtml = await followAndGetHtml(res, jar);
+  const homeState = parsePageState(homeHtml);
+  if (!homeState.ajaxIdentifier) {
+    throw new Error('Login no confirmado — el portal no devolvió la página esperada (¿usuario/contraseña incorrectos?)');
+  }
+  return homeState;
+}
+
+// Searches the NIU popup (AJAX), returns the internal record id APEX expects (not the NIU itself).
+async function httpSearchNiu(jar, state, niu) {
+  const body = new URLSearchParams();
+  body.set('p_flow_id', state.flowId);
+  body.set('p_flow_step_id', state.flowStepId);
+  body.set('p_instance', state.instance);
+  body.set('p_debug', '');
+  body.set('p_json', JSON.stringify({
+    regions: [{
+      id: 'P1_INFOCLIE',
+      ajaxIdentifier: state.ajaxIdentifier,
+      fetchData: { search: String(niu), sortColumn: null, sortDirection: null, version: 1, firstRow: 1, maxRows: 100 },
+    }],
+    salt: state.salt,
+  }));
+
+  const url = `${APEX_BASE}/wwv_flow.ajax?p_context=${encodeURIComponent(state.context)}`;
+  const res = await httpRequest(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'X-Requested-With': 'XMLHttpRequest',
+      Accept: 'application/json, text/javascript, */*; q=0.01',
+    },
+    body: body.toString(),
+  }, jar);
+
+  const json = await res.json();
+  const values = json?.regions?.[0]?.fetchedData?.values || [];
+  const match = values.find(([display]) => display && display.includes(`(${niu})`));
+  return match ? { internalId: match[1], display: match[0] } : null;
+}
+
+// Submits "Consultar" for the selected internal id — the portal does a FULL page
+// reload here (p_reload_on_submit=S), so the response is the entire results page.
+async function httpConsultar(jar, state, internalId) {
+  const body = new URLSearchParams();
+  body.set('p_flow_id', state.flowId);
+  body.set('p_flow_step_id', state.flowStepId);
+  body.set('p_instance', state.instance);
+  body.set('p_request', 'Consultar');
+  body.set('p_reload_on_submit', 'S');
+  body.set('p_page_submission_id', state.submissionId);
+  body.set('p_json', JSON.stringify({
+    pageItems: {
+      itemsToSubmit: [{ n: 'P1_INFOCLIE', v: internalId }, { n: 'P1_FACTCONS', v: '' }],
+      protected: state.protectedVal,
+      rowVersion: '',
+      formRegionChecksums: [],
+    },
+    salt: state.salt,
+  }));
+
+  const acceptUrl = `${APEX_BASE}/wwv_flow.accept?p_context=${encodeURIComponent(state.context)}`;
+  const res = await httpRequest(acceptUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'X-Requested-With': 'XMLHttpRequest',
+      Accept: 'application/json, text/javascript, */*; q=0.01',
+    },
+    body: body.toString(),
+  }, jar);
+
+  const html = await followAndGetHtml(res, jar);
+  return html; // caller re-parses page state from this + extracts the Pagos table
+}
+
+// Extracts the most recent row of the "Pagos" table from a results page's HTML.
+function extractPagoInfo(html) {
+  const $ = cheerio.load(html);
+  const container = $('[id^="R1694343654926727037"][id$="_data_panel"]');
+  if (container.length === 0) return { empty: true };
+  const rows = container.find('tr').filter((i, el) => $(el).find('td').length > 0);
+  if (rows.length === 0) return { empty: true };
+  const cells = $(rows[0]).find('td');
+  const cellText = (i) => (cells.eq(i).text() || '').trim();
+  return {
+    empty: false,
+    fechaRegistroPago: cellText(0) || null, // "DD-MES-YYYY hh:mmAM/PM" — has the exact TIME
+    estadoPago: cellText(1) || null,
+    fechaPago: cellText(3) || null, // dd/mm/yyyy — date only
+    observaciones: cellText(8) || null,
+  };
 }
 
 function monthsEs() {
@@ -165,76 +293,18 @@ function parseFechaPago(fechaStr) {
   return { day: parseInt(match[1], 10), month: parseInt(match[2], 10) - 1, year: parseInt(match[3], 10) };
 }
 
-// Consults a single NIU using the already-logged-in page.
-// NOTE: the popup LOV dialog markup is generated dynamically by APEX and could
-// not be inspected/tested ahead of time (no live access to the authenticated
-// portal). If this breaks, open the popup manually in Chrome DevTools and
-// adjust the selectors below (searchInput / firstResult).
-async function checkNiu(page, niu) {
-  await page.click(SEL.lovBtn);
-  await page.waitForSelector('input.a-PopupLOV-search', { timeout: 8000 });
-  const searchInput = await page.$('input.a-PopupLOV-search');
-  await searchInput.click();
-  await searchInput.fill(''); // clear any leftover text
-  await searchInput.type(String(niu), { delay: 80 }); // real keystrokes to trigger incremental search
-  await page.waitForTimeout(1200); // debounce + AJAX round trip
-
-  // Match the exact NIU inside the highlighted span, e.g. "Nombre (202545)"
-  const items = await page.$$('li.a-IconList-item');
-  let matched = null;
-  for (const li of items) {
-    const text = await li.textContent();
-    if (text && text.includes(`(${niu})`)) {
-      matched = li;
-      break;
-    }
+// Consults a single NIU using an already-logged-in session (jar + state).
+// Returns the payment info, and the FRESH page state (salt/submissionId rotate
+// on every full page load, so the caller must keep using the returned state).
+async function checkNiuHttp(jar, state, niu) {
+  const found = await httpSearchNiu(jar, state, niu);
+  if (!found) {
+    return { encontrado: false, empty: true, seleccionMostrada: 'NO ENCONTRADO en la búsqueda', state };
   }
-
-  if (!matched) {
-    await page.keyboard.press('Escape').catch(() => {});
-    return { encontrado: false, periodo: null, seleccionMostrada: `NO ENCONTRADO — ${items.length} resultados en la lista, ninguno coincidió` };
-  }
-  await matched.click();
-  await page.waitForTimeout(400);
-
-  // DIAGNOSTIC: capture what the visible field actually shows after selecting.
-  // If this is empty or doesn't contain the NIU, the click on the popup item
-  // is not registering with the framework, and that's the real bug.
-  const seleccionMostrada = await page.$eval('#P1_INFOCLIE', (el) => el.value).catch(() => '(no se pudo leer)');
-
-  // The portal does a FULL page reload on "Consultar" (p_reload_on_submit=S in
-  // its form), not an AJAX partial refresh — must wait for navigation, or the
-  // page context gets destroyed mid-read.
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: 'networkidle', timeout: 15000 }),
-    page.click(SEL.consultarBtn),
-  ]);
-
-  const result = await page.evaluate(() => {
-    const container = document.querySelector('[id^="R1694343654926727037"][id$="_data_panel"]');
-    if (!container) return { empty: true, foundContainer: false };
-    const rows = Array.from(container.querySelectorAll('tr')).filter((r) => r.querySelector('td'));
-    if (rows.length === 0) return { empty: true, foundContainer: true };
-    const cells = rows[0].querySelectorAll('td');
-    return {
-      empty: false,
-      foundContainer: true,
-      fechaRegistroPago: cells[0] ? cells[0].textContent.trim() : null, // format "DD-MES-YYYY hh:mmAM/PM" — has the exact TIME
-      estadoPago: cells[1] ? cells[1].textContent.trim() : null,
-      fechaPago: cells[3] ? cells[3].textContent.trim() : null, // format dd/mm/yyyy — date only, no time
-      observaciones: cells[8] ? cells[8].textContent.trim() : null,
-    };
-  });
-
-  return {
-    encontrado: true,
-    seleccionMostrada,
-    empty: result.empty,
-    fechaRegistroPago: result.fechaRegistroPago || null,
-    estadoPago: result.estadoPago || null,
-    fechaPago: result.fechaPago || null,
-    observaciones: result.observaciones || null,
-  };
+  const html = await httpConsultar(jar, state, found.internalId);
+  const newState = parsePageState(html);
+  const pago = extractPagoInfo(html);
+  return { encontrado: true, seleccionMostrada: found.display, ...pago, state: newState.ajaxIdentifier ? newState : state };
 }
 
 async function runScanJob(job, targetNius) {
@@ -243,70 +313,55 @@ async function runScanJob(job, targetNius) {
     return;
   }
 
-  let browser;
+  const jar = new CookieJar();
+  let state;
   try {
-    browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
+    state = await httpLogin(jar);
   } catch (e) {
-    job.error = 'No se pudo abrir el navegador: ' + e.message;
+    job.error = 'No se pudo iniciar sesión: ' + e.message;
     return;
   }
 
-  const context = await browser.newContext();
-  const page = await context.newPage();
+  const now = new Date();
 
-  try {
-    await page.goto(LOGIN_URL, { waitUntil: 'networkidle' });
-    await page.fill(SEL.loginUser, USERNAME);
-    await page.fill(SEL.loginPass, PASSWORD);
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'networkidle' }),
-      page.click(SEL.loginBtn),
-    ]);
-
-    const now = new Date();
-
-    for (const item of targetNius) {
-      try {
-        const r = await checkNiu(page, item.niu);
-        const fecha = r.fechaPago ? parseFechaPago(r.fechaPago) : null;
-        const pagado = !!(
-          fecha &&
-          fecha.year === now.getFullYear() &&
-          fecha.month === now.getMonth() &&
-          r.estadoPago &&
-          r.estadoPago.toLowerCase().includes('aplicado')
-        );
-        job.results.push({
-          niu: item.niu,
-          nombre: item.nombre,
-          direccion: item.direccion,
-          ultimoPago: r.fechaPago || (r.empty ? 'Sin pagos registrados' : 'No disponible'),
-          estadoPago: r.estadoPago || null,
-          fechaRegistroPago: r.fechaRegistroPago || null,
-          pagado,
-          diagnostico_seleccion: r.seleccionMostrada || null,
-        });
-        recordSharedResult(item.niu, {
-          pagado,
-          ultimoPago: r.fechaPago || (r.empty ? 'Sin pagos registrados' : 'No disponible'),
-          estadoPago: r.estadoPago || null,
-          fechaRegistroPago: r.fechaRegistroPago || null,
-        });
-      } catch (e) {
-        job.results.push({
-          niu: item.niu,
-          nombre: item.nombre,
-          direccion: item.direccion,
-          ultimoPago: 'ERROR: ' + e.message,
-          pagado: false,
-        });
-      }
-      job.progress++;
+  for (const item of targetNius) {
+    try {
+      const r = await checkNiuHttp(jar, state, item.niu);
+      state = r.state; // carry forward the rotated tokens for the next iteration
+      const fecha = r.fechaPago ? parseFechaPago(r.fechaPago) : null;
+      const pagado = !!(
+        fecha &&
+        fecha.year === now.getFullYear() &&
+        fecha.month === now.getMonth() &&
+        r.estadoPago &&
+        r.estadoPago.toLowerCase().includes('aplicado')
+      );
+      job.results.push({
+        niu: item.niu,
+        nombre: item.nombre,
+        direccion: item.direccion,
+        ultimoPago: r.fechaPago || (r.empty ? 'Sin pagos registrados' : 'No disponible'),
+        estadoPago: r.estadoPago || null,
+        fechaRegistroPago: r.fechaRegistroPago || null,
+        pagado,
+        diagnostico_seleccion: r.seleccionMostrada || null,
+      });
+      recordSharedResult(item.niu, {
+        pagado,
+        ultimoPago: r.fechaPago || (r.empty ? 'Sin pagos registrados' : 'No disponible'),
+        estadoPago: r.estadoPago || null,
+        fechaRegistroPago: r.fechaRegistroPago || null,
+      });
+    } catch (e) {
+      job.results.push({
+        niu: item.niu,
+        nombre: item.nombre,
+        direccion: item.direccion,
+        ultimoPago: 'ERROR: ' + e.message,
+        pagado: false,
+      });
     }
-  } catch (e) {
-    job.error = e.message;
-  } finally {
-    await browser.close();
+    job.progress++;
   }
 }
 // ---------- ROUTES ----------
