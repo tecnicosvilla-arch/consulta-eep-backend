@@ -82,6 +82,66 @@ function recordSharedResult(niu, data) {
   persistSharedResults();
 }
 
+// ---------- STATE: job queue (only ONE HTTP session runs at a time, everyone else queues) ----------
+let jobs = {}; // jobId -> job object
+let queue = []; // array of { jobId, targetNius }
+let processingQueue = false;
+
+function makeJobId() {
+  return 'job_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+}
+
+function pruneOldJobs() {
+  const ids = Object.keys(jobs).filter((id) => jobs[id].status === 'done' || jobs[id].status === 'error');
+  if (ids.length > 25) {
+    ids
+      .sort((a, b) => new Date(jobs[a].finishedAt || 0) - new Date(jobs[b].finishedAt || 0))
+      .slice(0, ids.length - 25)
+      .forEach((id) => delete jobs[id]);
+  }
+}
+
+function createJob(targetNius, label) {
+  const jobId = makeJobId();
+  jobs[jobId] = {
+    id: jobId,
+    status: 'queued',
+    progress: 0,
+    total: targetNius.length,
+    results: [],
+    queuedAt: new Date().toISOString(),
+    startedAt: null,
+    finishedAt: null,
+    error: null,
+    ruta: label || 'todas',
+  };
+  queue.push({ jobId, targetNius });
+  processQueue();
+  pruneOldJobs();
+  return jobId;
+}
+
+function queuePosition(jobId) {
+  const idx = queue.findIndex((q) => q.jobId === jobId);
+  return idx === -1 ? null : idx + 1;
+}
+
+async function processQueue() {
+  if (processingQueue) return;
+  processingQueue = true;
+  while (queue.length > 0) {
+    const { jobId, targetNius } = queue.shift();
+    const job = jobs[jobId];
+    if (!job) continue;
+    job.status = 'running';
+    job.startedAt = new Date().toISOString();
+    await runScanJob(job, targetNius);
+    job.status = job.error ? 'error' : 'done';
+    job.finishedAt = new Date().toISOString();
+  }
+  processingQueue = false;
+}
+
 // ---------- APEX BASE ----------
 const APEX_BASE = 'https://appthunder.conoracle.com/ords';
 const LOGIN_PAGE_URL = process.env.PORTAL_LOGIN_URL || `${APEX_BASE}/r/enerputu/facturas-eep/login`;
