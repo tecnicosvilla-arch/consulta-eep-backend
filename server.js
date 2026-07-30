@@ -66,7 +66,7 @@ function persistRutaLinieros() {
 
 // ---------- SHARED RESULTS: one status per NIU, visible to every device ----------
 const SHARED_RESULTS_FILE = path.join(__dirname, 'shared-results.json');
-let sharedResults = {}; // niu -> { pagado, ultimoPago, estadoPago, checkedAt }
+let sharedResults = {}; // { [niu]: { pagado, ultimoPago, estadoPago, fechaRegistroPago, checkedAt } }
 try {
   if (fs.existsSync(SHARED_RESULTS_FILE)) {
     sharedResults = JSON.parse(fs.readFileSync(SHARED_RESULTS_FILE, 'utf-8'));
@@ -75,7 +75,7 @@ try {
   sharedResults = {};
 }
 function persistSharedResults() {
-  fs.writeFile(SHARED_RESULTS_FILE, JSON.stringify(sharedResults), () => {}); // fire-and-forget
+  fs.writeFile(SHARED_RESULTS_FILE, JSON.stringify(sharedResults), () => {});
 }
 function recordSharedResult(niu, data) {
   sharedResults[niu] = { ...data, checkedAt: new Date().toISOString() };
@@ -145,6 +145,7 @@ async function processQueue() {
 // ---------- APEX BASE ----------
 const APEX_BASE = 'https://appthunder.conoracle.com/ords';
 const LOGIN_PAGE_URL = process.env.PORTAL_LOGIN_URL || `${APEX_BASE}/r/enerputu/facturas-eep/login`;
+const HOME_PAGE_URL_BASE = `${APEX_BASE}/r/enerputu/facturas-eep/home`;
 
 // ---------- Minimal cookie jar (Node's fetch has no built-in cookie jar) ----------
 class CookieJar {
@@ -247,10 +248,28 @@ async function httpLogin(jar) {
     body: body.toString(),
   }, jar);
 
-  const homeHtml = await followAndGetHtml(res, jar);
+  // The portal does NOT redirect and returns an essentially empty 200 response
+  // here (it only sets cookies) — the browser's own JS then navigates to the
+  // home page afterward. We replicate that: go straight to the home page,
+  // reusing the same instance/session id that was used for login.
+  if (res.status >= 400) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(`El portal respondió ${res.status} al enviar el login. ${errText.slice(0, 200)}`);
+  }
+
+  const homeUrl = `${HOME_PAGE_URL_BASE}?session=${state.instance}`;
+  const homeRes = await httpRequest(homeUrl, { method: 'GET' }, jar);
+  const homeHtml = await followAndGetHtml(homeRes, jar);
   const homeState = parsePageState(homeHtml);
+
   if (!homeState.ajaxIdentifier) {
-    throw new Error('Login no confirmado — el portal no devolvió la página esperada (¿usuario/contraseña incorrectos?)');
+    // Could be wrong credentials (portal sent us back to the login page), or
+    // the session id changed and we need to discover it another way.
+    const looksLikeLoginPage = /P9999_USERNAME/.test(homeHtml);
+    if (looksLikeLoginPage) {
+      throw new Error('El portal devolvió la pantalla de login otra vez — revisa PORTAL_USER / PORTAL_PASS en las variables de entorno.');
+    }
+    throw new Error('Login no confirmado — el portal no devolvió la página esperada (revisa la respuesta cruda si esto persiste).');
   }
   return homeState;
 }
@@ -319,7 +338,12 @@ async function httpConsultar(jar, state, internalId) {
     body: body.toString(),
   }, jar);
 
-  const html = await followAndGetHtml(res, jar);
+  // Same situation as login: no real redirect, so re-fetch the page directly
+  // using the same session — this reflects the item value we just submitted
+  // (APEX stores page-item state server-side per session).
+  const homeUrl = `${HOME_PAGE_URL_BASE}?session=${state.instance}`;
+  const homeRes = await httpRequest(homeUrl, { method: 'GET' }, jar);
+  const html = await followAndGetHtml(homeRes, jar);
   return html; // caller re-parses page state from this + extracts the Pagos table
 }
 
@@ -424,6 +448,7 @@ async function runScanJob(job, targetNius) {
     job.progress++;
   }
 }
+
 // ---------- ROUTES ----------
 app.post('/api/scan/start', (req, res) => {
   let targetList;
@@ -469,13 +494,6 @@ app.get('/api/scan/results/:jobId', (req, res) => {
   const job = jobs[req.params.jobId];
   if (!job) return res.status(404).json({ error: 'Job no encontrado (puede haber expirado)' });
   res.json({ results: job.results, finishedAt: job.finishedAt, status: job.status, ruta: job.ruta });
-});
-
-app.get('/api/rutas', (req, res) => {
-  const counts = {};
-  NIUS.forEach((n) => { counts[n.ruta] = (counts[n.ruta] || 0) + 1; });
-  const rutas = Object.keys(counts).sort((a, b) => Number(a) - Number(b)).map((r) => ({ ruta: r, cantidad: counts[r] }));
-  res.json(rutas);
 });
 
 app.get('/api/data/rows', (req, res) => res.json({ rows: sharedRows }));
@@ -548,6 +566,13 @@ app.post('/api/rutas-linieros', (req, res) => {
   rutaLinieros[ruta] = liniero || '';
   persistRutaLinieros();
   res.json({ ok: true, rutaLinieros });
+});
+
+app.get('/api/rutas', (req, res) => {
+  const counts = {};
+  NIUS.forEach((n) => { counts[n.ruta] = (counts[n.ruta] || 0) + 1; });
+  const rutas = Object.keys(counts).sort((a, b) => Number(a) - Number(b)).map((r) => ({ ruta: r, cantidad: counts[r] }));
+  res.json(rutas);
 });
 
 app.get('/api/nius', (req, res) => res.json(NIUS));
