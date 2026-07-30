@@ -575,6 +575,25 @@ app.get('/api/rutas', (req, res) => {
   res.json(rutas);
 });
 
+app.get('/api/debug/:niu', async (req, res) => {
+  try {
+    const jar = new CookieJar();
+    const state = await httpLogin(jar);
+    const found = await httpSearchNiu(jar, state, req.params.niu);
+    if (!found) return res.json({ ok: false, message: 'NIU no encontrado en la búsqueda' });
+    const html = await httpConsultar(jar, state, found.internalId);
+    const pago = extractPagoInfo(html);
+
+    // Grab a chunk of raw HTML around the Pagos region so we can see its real structure
+    const idx = html.indexOf('R1694343654926727037');
+    const snippet = idx >= 0 ? html.slice(idx, idx + 4000) : 'No se encontró el id de la región de Pagos en el HTML devuelto.';
+
+    res.json({ ok: true, display: found.display, extracted: pago, htmlSnippet: snippet });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 app.get('/api/nius', (req, res) => res.json(NIUS));
 
 app.get('/health', (req, res) => res.json({ ok: true }));
