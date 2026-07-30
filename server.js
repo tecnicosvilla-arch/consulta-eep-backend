@@ -208,6 +208,8 @@ function parsePageState(html) {
   const scriptText = $('script').map((i, el) => $(el).html()).get().join('\n');
   const m = scriptText.match(/"itemId":"P1_INFOCLIE","ajaxIdentifier":"([^"]+)"/);
   state.ajaxIdentifier = m ? m[1].replace(/\\\//g, '/') : null;
+  const userMatch = scriptText.match(/APP_USER:\s*"([^"]+)"/);
+  state.appUser = userMatch ? userMatch[1] : null;
   return state;
 }
 
@@ -262,12 +264,12 @@ async function httpLogin(jar) {
   const homeHtml = await followAndGetHtml(homeRes, jar);
   const homeState = parsePageState(homeHtml);
 
-  if (!homeState.ajaxIdentifier) {
+  if (!homeState.ajaxIdentifier || homeState.appUser === 'nobody' || !homeState.appUser) {
     // Could be wrong credentials (portal sent us back to the login page), or
     // the session id changed and we need to discover it another way.
     const looksLikeLoginPage = /P9999_USERNAME/.test(homeHtml);
-    if (looksLikeLoginPage) {
-      throw new Error('El portal devolvió la pantalla de login otra vez — revisa PORTAL_USER / PORTAL_PASS en las variables de entorno.');
+    if (looksLikeLoginPage || homeState.appUser === 'nobody') {
+      throw new Error(`El portal no nos reconoce como autenticados (APP_USER="${homeState.appUser}") — revisa PORTAL_USER / PORTAL_PASS en las variables de entorno.`);
     }
     throw new Error('Login no confirmado — el portal no devolvió la página esperada (revisa la respuesta cruda si esto persiste).');
   }
@@ -573,6 +575,16 @@ app.get('/api/rutas', (req, res) => {
   NIUS.forEach((n) => { counts[n.ruta] = (counts[n.ruta] || 0) + 1; });
   const rutas = Object.keys(counts).sort((a, b) => Number(a) - Number(b)).map((r) => ({ ruta: r, cantidad: counts[r] }));
   res.json(rutas);
+});
+
+app.get('/api/debug-login', async (req, res) => {
+  try {
+    const jar = new CookieJar();
+    const state = await httpLogin(jar);
+    res.json({ ok: true, appUser: state.appUser, instance: state.instance, ajaxIdentifier: state.ajaxIdentifier ? state.ajaxIdentifier.slice(0, 30) + '...' : null });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 app.get('/api/debug/:niu', async (req, res) => {
