@@ -211,6 +211,18 @@ async function followAndGetHtml(res, jar) {
   return current.text();
 }
 
+// Decodes JS string escapes (e.g. \/ or \u002F) exactly as a browser's JS
+// engine would when parsing the inline <script> — the portal isn't consistent
+// about which escape form it uses for forward slashes, so a narrow regex isn't
+// enough; this handles any standard JS string escape sequence.
+function decodeJsString(raw) {
+  try {
+    return JSON.parse('"' + raw + '"');
+  } catch (e) {
+    return raw.replace(/\\\//g, '/').replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  }
+}
+
 // Parses the hidden APEX form fields out of any page (login or home) needed to submit forms.
 function parsePageState(html) {
   const $ = cheerio.load(html);
@@ -227,7 +239,7 @@ function parsePageState(html) {
   // apex.widget.popupLov({"itemId":"P1_INFOCLIE","ajaxIdentifier":"XXXX", ...})
   const scriptText = $('script').map((i, el) => $(el).html()).get().join('\n');
   const m = scriptText.match(/"itemId":"P1_INFOCLIE","ajaxIdentifier":"([^"]+)"/);
-  state.ajaxIdentifier = m ? m[1].replace(/\\\//g, '/') : null;
+  state.ajaxIdentifier = m ? decodeJsString(m[1]) : null;
   const userMatch = scriptText.match(/APP_USER:\s*"([^"]+)"/);
   state.appUser = userMatch ? userMatch[1] : null;
   return state;
