@@ -148,25 +148,43 @@ const LOGIN_PAGE_URL = process.env.PORTAL_LOGIN_URL || `${APEX_BASE}/r/enerputu/
 const HOME_PAGE_URL_BASE = `${APEX_BASE}/r/enerputu/facturas-eep/home`;
 
 // ---------- Minimal cookie jar (Node's fetch has no built-in cookie jar) ----------
+// Keeps cookies keyed by name+path — this portal sets TWO cookies with the SAME
+// name (X-Oracle-BMC-LBS-Route) but different paths. A real browser sends both
+// together; dropping one likely breaks load-balancer session affinity.
 class CookieJar {
-  constructor() { this.cookies = new Map(); }
+  constructor() { this.cookies = []; } // array of { name, value, path }
   update(setCookieHeaders) {
     (setCookieHeaders || []).forEach((sc) => {
-      const pair = sc.split(';')[0];
-      const idx = pair.indexOf('=');
-      if (idx > 0) this.cookies.set(pair.slice(0, idx).trim(), pair.slice(idx + 1).trim());
+      const parts = sc.split(';').map((s) => s.trim());
+      const idx = parts[0].indexOf('=');
+      if (idx <= 0) return;
+      const name = parts[0].slice(0, idx);
+      const value = parts[0].slice(idx + 1);
+      let cpath = '/';
+      parts.slice(1).forEach((p) => {
+        if (p.toLowerCase().startsWith('path=')) cpath = p.slice(5);
+      });
+      this.cookies = this.cookies.filter((c) => !(c.name === name && c.path === cpath));
+      this.cookies.push({ name, value, path: cpath });
     });
   }
   header() {
-    return Array.from(this.cookies.entries()).map(([k, v]) => `${k}=${v}`).join('; ');
+    return this.cookies.map((c) => `${c.name}=${c.value}`).join('; ');
   }
 }
 
 async function httpRequest(url, options, jar) {
   const headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    Referer: `${APEX_BASE}/r/enerputu/facturas-eep/home`,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
+    Referer: 'https://appthunder.conoracle.com/',
     Origin: 'https://appthunder.conoracle.com',
+    'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+    'sec-ch-ua': '"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"Windows"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-origin',
     Cookie: jar.header(),
     ...(options.headers || {}),
   };
