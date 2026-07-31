@@ -66,7 +66,7 @@ function persistRutaLinieros() {
 
 // ---------- SHARED RESULTS: one status per NIU, visible to every device ----------
 const SHARED_RESULTS_FILE = path.join(__dirname, 'shared-results.json');
-let sharedResults = {}; // { [niu]: { pagado, ultimoPago, estadoPago, fechaRegistroPago, checkedAt } }
+let sharedResults = {}; // { [niu]: { pagado, ultimoPago, estadoPago, fechaRegistroPago, checkedAt, ... } }
 try {
   if (fs.existsSync(SHARED_RESULTS_FILE)) {
     sharedResults = JSON.parse(fs.readFileSync(SHARED_RESULTS_FILE, 'utf-8'));
@@ -78,7 +78,15 @@ function persistSharedResults() {
   fs.writeFile(SHARED_RESULTS_FILE, JSON.stringify(sharedResults), () => {});
 }
 function recordSharedResult(niu, data) {
-  sharedResults[niu] = { ...data, checkedAt: new Date().toISOString() };
+  // Conservamos el estado "compartido" de escaneos previos: un re-escaneo NO
+  // debe borrar que ese comprobante ya se envió por WhatsApp.
+  const prev = sharedResults[niu] || {};
+  sharedResults[niu] = {
+    ...data,
+    compartido: prev.compartido || false,
+    compartidoAt: prev.compartidoAt || null,
+    checkedAt: new Date().toISOString(),
+  };
   persistSharedResults();
 }
 
@@ -382,6 +390,15 @@ async function httpConsultar(jar, state, internalId) {
 }
 
 // Extracts the most recent row of the "Pagos" table from a results page's HTML.
+//
+// NOTA IMPORTANTE: solo las columnas 0 (fecha+hora registro), 1 (estado), 3
+// (fecha pago) y 8 (observaciones) tienen su índice confirmado en producción.
+// Los campos nuevos (monto, número de factura, banco, cuenta) NO tienen un
+// índice de columna verificado todavía, así que se extraen por PATRÓN sobre
+// el texto completo de la fila en vez de arriesgarse a leer la celda
+// equivocada. `celdasCrudas` queda incluido a propósito para que, al revisar
+// un resultado real, se pueda confirmar (o corregir) esos patrones antes de
+// construir el baucher.
 function extractPagoInfo(html) {
   const $ = cheerio.load(html);
   const container = $('[id^="R1694343654926727037"][id$="_data_panel"]');
@@ -390,13 +407,35 @@ function extractPagoInfo(html) {
   if (rows.length === 0) return { empty: true };
   const cells = $(rows[0]).find('td');
   const cellText = (i) => (cells.eq(i).text() || '').trim();
+
+  const allCells = [];
+  cells.each((i, el) => allCells.push($(el).text().trim()));
+  const rowText = allCells.join(' | ');
+
+  const montoMatch = rowText.match(/\$[\d.,]+/);
+  const facturaMatch = rowText.match(/Factura:?\s*([0-9]+)/i);
+  const bancoMatch = rowText.match(/Banco\s+[A-Za-zÁÉÍÓÚáéíóúñÑ]+/i);
+  const cuentaMatch = rowText.match(/\b(\d{8,20})\b/); // corrida larga de dígitos = número de cuenta
+
   return {
     empty: false,
-    fechaRegistroPago: cellText(0) || null, // "DD-MES-YYYY hh:mmAM/PM" — has the exact TIME
+    fechaRegistroPago: cellText(0) || null, // "DD-MES-YYYY hh:mmAM/PM" — fecha Y hora exacta
     estadoPago: cellText(1) || null,
-    fechaPago: cellText(3) || null, // dd/mm/yyyy — date only
+    fechaPago: cellText(3) || null, // dd/mm/yyyy — solo fecha
     observaciones: cellText(8) || null,
+    monto: montoMatch ? montoMatch[0] : null,
+    numeroFactura: facturaMatch ? facturaMatch[1] : null,
+    banco: bancoMatch ? bancoMatch[0].trim() : null,
+    cuenta: cuentaMatch ? cuentaMatch[1] : null,
+    celdasCrudas: allCells, // debug temporal — quitar del payload cuando se confirmen los índices
   };
+}
+
+// Separa la hora legible (hh:mmAM/PM) de la cadena "DD-MES-YYYY hh:mmAM/PM".
+function extraerHoraRegistro(fechaRegistroPago) {
+  if (!fechaRegistroPago) return null;
+  const m = fechaRegistroPago.match(/(\d{1,2}:\d{2}\s*[AP]M)/i);
+  return m ? m[1].toUpperCase() : null;
 }
 
 function monthsEs() {
@@ -454,22 +493,24 @@ async function runScanJob(job, targetNius) {
         r.estadoPago &&
         r.estadoPago.toLowerCase().includes('aplicado')
       );
-      job.results.push({
+      const datosPago = {
         niu: item.niu,
         nombre: item.nombre,
         direccion: item.direccion,
         ultimoPago: r.fechaPago || (r.empty ? 'Sin pagos registrados' : 'No disponible'),
+        horaPago: extraerHoraRegistro(r.fechaRegistroPago),
         estadoPago: r.estadoPago || null,
         fechaRegistroPago: r.fechaRegistroPago || null,
+        monto: r.monto || null,
+        numeroFactura: r.numeroFactura || null,
+        banco: r.banco || null,
+        cuenta: r.cuenta || null,
         pagado,
         diagnostico_seleccion: r.seleccionMostrada || null,
-      });
-      recordSharedResult(item.niu, {
-        pagado,
-        ultimoPago: r.fechaPago || (r.empty ? 'Sin pagos registrados' : 'No disponible'),
-        estadoPago: r.estadoPago || null,
-        fechaRegistroPago: r.fechaRegistroPago || null,
-      });
+        celdasCrudas: r.celdasCrudas || null, // debug temporal
+      };
+      job.results.push(datosPago);
+      recordSharedResult(item.niu, datosPago);
     } catch (e) {
       job.results.push({
         niu: item.niu,
@@ -552,6 +593,19 @@ app.post('/api/data/rows', (req, res) => {
 });
 
 app.get('/api/results', (req, res) => res.json({ results: sharedResults }));
+
+// Marca un resultado (por NIU) como ya compartido por WhatsApp. Lo usará el
+// botón "Compartir" del baucher en el frontend.
+app.post('/api/results/:niu/compartido', (req, res) => {
+  const niu = req.params.niu;
+  if (!sharedResults[niu]) {
+    return res.status(404).json({ ok: false, message: 'NIU no encontrado en resultados' });
+  }
+  sharedResults[niu].compartido = true;
+  sharedResults[niu].compartidoAt = new Date().toISOString();
+  persistSharedResults();
+  res.json({ ok: true, result: sharedResults[niu] });
+});
 
 app.get('/api/cortes', (req, res) => res.json({ cortes }));
 
