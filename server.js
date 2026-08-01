@@ -515,6 +515,34 @@ function persistCompartidos() {
   fs.writeFile(COMPARTIDOS_FILE, JSON.stringify(compartidos), () => {});
 }
 
+// ---------- MONTHLY RESET: cortes/compartidos are only kept for the current month ----------
+const MONTH_TRACKER_FILE = path.join(__dirname, 'month-tracker.json');
+let cortesMonth = null;
+try {
+  if (fs.existsSync(MONTH_TRACKER_FILE)) {
+    cortesMonth = JSON.parse(fs.readFileSync(MONTH_TRACKER_FILE, 'utf-8')).month || null;
+  }
+} catch (e) {
+  cortesMonth = null;
+}
+function currentMonthKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function checkMonthRollover() {
+  const now = currentMonthKey();
+  if (cortesMonth === now) return;
+  // First run ever (no tracker file yet) just records the month without wiping anything.
+  if (cortesMonth !== null) {
+    cortes = [];
+    compartidos = [];
+    persistCortes();
+    persistCompartidos();
+  }
+  cortesMonth = now;
+  fs.writeFile(MONTH_TRACKER_FILE, JSON.stringify({ month: cortesMonth }), () => {});
+}
+
 // ---------- ROUTES ----------
 app.post('/api/scan/start', (req, res) => {
   let targetList;
@@ -565,6 +593,7 @@ app.get('/api/scan/results/:jobId', (req, res) => {
 app.get('/api/data/rows', (req, res) => res.json({ rows: sharedRows }));
 
 app.post('/api/data/rows', (req, res) => {
+  checkMonthRollover();
   if (!req.body || !Array.isArray(req.body.rows)) {
     return res.status(400).json({ ok: false, message: 'Se esperaba { rows: [...] }' });
   }
@@ -585,9 +614,13 @@ app.post('/api/data/rows', (req, res) => {
 
 app.get('/api/results', (req, res) => res.json({ results: sharedResults }));
 
-app.get('/api/cortes', (req, res) => res.json({ cortes }));
+app.get('/api/cortes', (req, res) => {
+  checkMonthRollover();
+  res.json({ cortes });
+});
 
 app.post('/api/cortes', (req, res) => {
+  checkMonthRollover();
   const { niu, nombre, direccion, ruta, liniero, tipo, hora } = req.body || {};
   if (!niu || !liniero || !tipo) {
     return res.status(400).json({ ok: false, message: 'Se requiere niu, liniero y tipo' });
@@ -643,18 +676,24 @@ app.get('/api/rutas', (req, res) => {
 
 app.get('/api/nius', (req, res) => res.json(NIUS));
 
-app.get('/api/compartidos', (req, res) => res.json({ compartidos }));
+app.get('/api/compartidos', (req, res) => {
+  checkMonthRollover();
+  res.json({ compartidos });
+});
 
 app.post('/api/compartidos', (req, res) => {
-  const { niu, numeroFactura } = req.body || {};
+  checkMonthRollover();
+  const { niu, numeroFactura, liniero } = req.body || {};
   if (!niu) return res.status(400).json({ ok: false, message: 'Se requiere niu' });
-  const record = { niu, numeroFactura: numeroFactura || null, fecha: new Date().toISOString() };
+  const record = { niu, numeroFactura: numeroFactura || null, liniero: liniero || null, fecha: new Date().toISOString() };
   compartidos.push(record);
   persistCompartidos();
   res.json({ ok: true, record });
 });
 
 app.get('/health', (req, res) => res.json({ ok: true }));
+
+checkMonthRollover();
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Servidor corriendo en puerto ' + PORT));
