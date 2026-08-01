@@ -390,12 +390,20 @@ function extractPagoInfo(html) {
   if (rows.length === 0) return { empty: true };
   const cells = $(rows[0]).find('td');
   const cellText = (i) => (cells.eq(i).text() || '').trim();
+  const observaciones = cellText(8) || null;
+  const facturaMatch = observaciones ? observaciones.match(/Pago Factura:\s*(\d+)/i) : null;
   return {
     empty: false,
     fechaRegistroPago: cellText(0) || null, // "DD-MES-YYYY hh:mmAM/PM" — has the exact TIME
     estadoPago: cellText(1) || null,
+    tipoPago: cellText(2) || null,
     fechaPago: cellText(3) || null, // dd/mm/yyyy — date only
-    observaciones: cellText(8) || null,
+    valorPagado: cellText(4) || null,
+    medioPago: cellText(5) || null,
+    entidadRecaudo: cellText(6) || null,
+    numeroCuenta: cellText(7) || null,
+    observaciones,
+    numeroFactura: facturaMatch ? facturaMatch[1] : null,
   };
 }
 
@@ -461,6 +469,11 @@ async function runScanJob(job, targetNius) {
         ultimoPago: r.fechaPago || (r.empty ? 'Sin pagos registrados' : 'No disponible'),
         estadoPago: r.estadoPago || null,
         fechaRegistroPago: r.fechaRegistroPago || null,
+        valorPagado: r.valorPagado || null,
+        medioPago: r.medioPago || null,
+        entidadRecaudo: r.entidadRecaudo || null,
+        numeroCuenta: r.numeroCuenta || null,
+        numeroFactura: r.numeroFactura || null,
         pagado,
         diagnostico_seleccion: r.seleccionMostrada || null,
       });
@@ -469,6 +482,11 @@ async function runScanJob(job, targetNius) {
         ultimoPago: r.fechaPago || (r.empty ? 'Sin pagos registrados' : 'No disponible'),
         estadoPago: r.estadoPago || null,
         fechaRegistroPago: r.fechaRegistroPago || null,
+        valorPagado: r.valorPagado || null,
+        medioPago: r.medioPago || null,
+        entidadRecaudo: r.entidadRecaudo || null,
+        numeroCuenta: r.numeroCuenta || null,
+        numeroFactura: r.numeroFactura || null,
       });
     } catch (e) {
       job.results.push({
@@ -481,6 +499,20 @@ async function runScanJob(job, targetNius) {
     }
     job.progress++;
   }
+}
+
+// ---------- SHARED COMPARTIDOS: which paid receipts have already been shared ----------
+const COMPARTIDOS_FILE = path.join(__dirname, 'compartidos.json');
+let compartidos = []; // [{ niu, numeroFactura, fecha }]
+try {
+  if (fs.existsSync(COMPARTIDOS_FILE)) {
+    compartidos = JSON.parse(fs.readFileSync(COMPARTIDOS_FILE, 'utf-8'));
+  }
+} catch (e) {
+  compartidos = [];
+}
+function persistCompartidos() {
+  fs.writeFile(COMPARTIDOS_FILE, JSON.stringify(compartidos), () => {});
 }
 
 // ---------- ROUTES ----------
@@ -610,6 +642,17 @@ app.get('/api/rutas', (req, res) => {
 });
 
 app.get('/api/nius', (req, res) => res.json(NIUS));
+
+app.get('/api/compartidos', (req, res) => res.json({ compartidos }));
+
+app.post('/api/compartidos', (req, res) => {
+  const { niu, numeroFactura } = req.body || {};
+  if (!niu) return res.status(400).json({ ok: false, message: 'Se requiere niu' });
+  const record = { niu, numeroFactura: numeroFactura || null, fecha: new Date().toISOString() };
+  compartidos.push(record);
+  persistCompartidos();
+  res.json({ ok: true, record });
+});
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
