@@ -515,32 +515,39 @@ function persistCompartidos() {
   fs.writeFile(COMPARTIDOS_FILE, JSON.stringify(compartidos), () => {});
 }
 
-// ---------- MONTHLY RESET: cortes/compartidos are only kept for the current month ----------
+// ---------- MONTHLY DATA CYCLE: the matricula list + payment results reset each
+// month (a new month = a new operating cycle waiting for a fresh Excel upload).
+// Reports (cortes/notificaciones/comprobantes) are NEVER deleted — they stay
+// forever so past months remain visible in the indicadores month selector.
 const MONTH_TRACKER_FILE = path.join(__dirname, 'month-tracker.json');
-let cortesMonth = null;
+let dataMonth = null;
 try {
   if (fs.existsSync(MONTH_TRACKER_FILE)) {
-    cortesMonth = JSON.parse(fs.readFileSync(MONTH_TRACKER_FILE, 'utf-8')).month || null;
+    dataMonth = JSON.parse(fs.readFileSync(MONTH_TRACKER_FILE, 'utf-8')).month || null;
   }
 } catch (e) {
-  cortesMonth = null;
+  dataMonth = null;
 }
 function currentMonthKey() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
+function resetMonthlyData() {
+  sharedRows = [];
+  sharedResults = {};
+  persistSharedRows();
+  persistSharedResults();
+}
 function checkMonthRollover() {
   const now = currentMonthKey();
-  if (cortesMonth === now) return;
-  // First run ever (no tracker file yet) just records the month without wiping anything.
-  if (cortesMonth !== null) {
-    cortes = [];
-    compartidos = [];
-    persistCortes();
-    persistCompartidos();
+  if (dataMonth === now) return;
+  // First run ever (no tracker file yet) just records the month without wiping anything —
+  // avoids nuking real data just because the server was deployed mid-month.
+  if (dataMonth !== null) {
+    resetMonthlyData();
   }
-  cortesMonth = now;
-  fs.writeFile(MONTH_TRACKER_FILE, JSON.stringify({ month: cortesMonth }), () => {});
+  dataMonth = now;
+  fs.writeFile(MONTH_TRACKER_FILE, JSON.stringify({ month: dataMonth }), () => {});
 }
 
 // ---------- ROUTES ----------
@@ -590,7 +597,17 @@ app.get('/api/scan/results/:jobId', (req, res) => {
   res.json({ results: job.results, finishedAt: job.finishedAt, status: job.status, ruta: job.ruta });
 });
 
-app.get('/api/data/rows', (req, res) => res.json({ rows: sharedRows }));
+app.post('/api/reset-mes', (req, res) => {
+  resetMonthlyData();
+  dataMonth = currentMonthKey();
+  fs.writeFile(MONTH_TRACKER_FILE, JSON.stringify({ month: dataMonth }), () => {});
+  res.json({ ok: true, message: 'Listado y resultados de pago reiniciados. Los reportes de meses anteriores se conservan.' });
+});
+
+app.get('/api/data/rows', (req, res) => {
+  checkMonthRollover();
+  res.json({ rows: sharedRows });
+});
 
 app.post('/api/data/rows', (req, res) => {
   checkMonthRollover();
@@ -612,7 +629,10 @@ app.post('/api/data/rows', (req, res) => {
   res.json({ ok: true, total: sharedRows.length, nuevos, actualizados });
 });
 
-app.get('/api/results', (req, res) => res.json({ results: sharedResults }));
+app.get('/api/results', (req, res) => {
+  checkMonthRollover();
+  res.json({ results: sharedResults });
+});
 
 app.get('/api/cortes', (req, res) => {
   checkMonthRollover();
