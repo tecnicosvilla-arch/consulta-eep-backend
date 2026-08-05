@@ -9,7 +9,7 @@ const ws = require('ws');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled rejection (servidor sigue corriendo):', err);
@@ -52,6 +52,19 @@ async function upsertSharedRows(rows) {
   const records = rows.map((r) => ({ niu: r.niu, data: r, updated_at: new Date().toISOString() }));
   const { error } = await supabase.from('shared_rows').upsert(records, { onConflict: 'niu' });
   if (error) throw error;
+}
+async function updateTelefono(niu, telefono, celular) {
+  const { data, error } = await supabase.from('shared_rows').select('data').eq('niu', niu).maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error('NIU no encontrado en el listado');
+  const merged = { ...data.data };
+  if (telefono !== undefined) merged.telefono = telefono || null;
+  if (celular !== undefined) merged.celular = celular || null;
+  const { error: upErr } = await supabase
+    .from('shared_rows')
+    .upsert({ niu, data: merged, updated_at: new Date().toISOString() }, { onConflict: 'niu' });
+  if (upErr) throw upErr;
+  return merged;
 }
 async function deleteAllSharedRows() {
   const { error } = await supabase.from('shared_rows').delete().neq('niu', '__never__');
@@ -634,20 +647,38 @@ app.get('/api/data/rows', ah(async (req, res) => {
   res.json({ rows });
 }));
 
+app.post('/api/data/telefono', ah(async (req, res) => {
+  const { niu, telefono, celular } = req.body || {};
+  if (!niu) return res.status(400).json({ ok: false, message: 'Se requiere niu' });
+  const row = await updateTelefono(niu, telefono, celular);
+  res.json({ ok: true, row });
+}));
+
 app.post('/api/data/rows', ah(async (req, res) => {
   await checkMonthRollover();
   if (!req.body || !Array.isArray(req.body.rows)) {
     return res.status(400).json({ ok: false, message: 'Se esperaba { rows: [...] }' });
   }
   const existingRows = await getSharedRows();
-  const existingNius = new Set(existingRows.map((r) => r.niu));
+  const existingByNiu = {};
+  existingRows.forEach((r) => { existingByNiu[r.niu] = r; });
+
   let nuevos = 0;
   let actualizados = 0;
-  req.body.rows.forEach((r) => {
-    if (existingNius.has(r.niu)) actualizados++; else nuevos++;
+  const mergedRows = req.body.rows.map((r) => {
+    const existing = existingByNiu[r.niu];
+    if (existing) actualizados++; else nuevos++;
+    const merged = { ...r };
+    // El teléfono/celular queda "pegado" al NIU: si este Excel no trae el
+    // dato, conservamos el que ya teníamos guardado (el nombre puede cambiar
+    // por venta del inmueble, pero el número de contacto sigue siendo válido).
+    if (!merged.telefono && existing && existing.telefono) merged.telefono = existing.telefono;
+    if (!merged.celular && existing && existing.celular) merged.celular = existing.celular;
+    return merged;
   });
-  await upsertSharedRows(req.body.rows);
-  res.json({ ok: true, total: existingNius.size + nuevos, nuevos, actualizados });
+
+  await upsertSharedRows(mergedRows);
+  res.json({ ok: true, total: Object.keys(existingByNiu).length + nuevos, nuevos, actualizados });
 }));
 
 app.get('/api/results', ah(async (req, res) => {
