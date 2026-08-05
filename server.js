@@ -4,6 +4,7 @@ const cors = require('cors');
 const cheerio = require('cheerio');
 const fs = require('fs');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 app.use(cors());
@@ -20,71 +21,171 @@ process.on('uncaughtException', (err) => {
 const USERNAME = process.env.PORTAL_USER;
 const PASSWORD = process.env.PORTAL_PASS;
 
+// nius.json sigue siendo un archivo estático incluido en el backend — nunca se
+// escribe desde la app, así que no necesita vivir en Supabase.
 const NIUS = JSON.parse(fs.readFileSync(path.join(__dirname, 'nius.json'), 'utf-8'));
 
-// ---------- SHARED DATA: the uploaded Excel rows, visible to every device ----------
-const SHARED_DATA_FILE = path.join(__dirname, 'shared-data.json');
-let sharedRows = [];
-try {
-  if (fs.existsSync(SHARED_DATA_FILE)) {
-    sharedRows = JSON.parse(fs.readFileSync(SHARED_DATA_FILE, 'utf-8'));
-  }
-} catch (e) {
-  sharedRows = [];
+// ---------- SUPABASE ----------
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+  console.error('Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY en las variables de entorno');
 }
-function persistSharedRows() {
-  fs.writeFile(SHARED_DATA_FILE, JSON.stringify(sharedRows), () => {}); // fire-and-forget
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+
+// Envuelve una ruta async: si la promesa falla, el error llega al middleware
+// de errores en vez de dejar la petición colgada (Express 4 no captura esto solo).
+function ah(fn) {
+  return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 }
 
-// ---------- SHARED CORTES: service-cutoff records, visible to every device ----------
-const CORTES_FILE = path.join(__dirname, 'cortes.json');
-let cortes = [];
-try {
-  if (fs.existsSync(CORTES_FILE)) {
-    cortes = JSON.parse(fs.readFileSync(CORTES_FILE, 'utf-8'));
-  }
-} catch (e) {
-  cortes = [];
+// ---------- SHARED DATA: el listado del Excel subido, visible en todos los dispositivos ----------
+// Tabla Supabase: shared_rows(niu text PK, data jsonb, updated_at)
+async function getSharedRows() {
+  const { data, error } = await supabase.from('shared_rows').select('data');
+  if (error) throw error;
+  return (data || []).map((r) => r.data);
 }
-function persistCortes() {
-  fs.writeFile(CORTES_FILE, JSON.stringify(cortes), () => {});
+async function upsertSharedRows(rows) {
+  if (rows.length === 0) return;
+  const records = rows.map((r) => ({ niu: r.niu, data: r, updated_at: new Date().toISOString() }));
+  const { error } = await supabase.from('shared_rows').upsert(records, { onConflict: 'niu' });
+  if (error) throw error;
 }
-
-// ---------- SHARED ROUTE-LINIERO ASSIGNMENTS ----------
-const RUTA_LINIEROS_FILE = path.join(__dirname, 'ruta-linieros.json');
-let rutaLinieros = {}; // { [ruta]: linieroName }
-try {
-  if (fs.existsSync(RUTA_LINIEROS_FILE)) {
-    rutaLinieros = JSON.parse(fs.readFileSync(RUTA_LINIEROS_FILE, 'utf-8'));
-  }
-} catch (e) {
-  rutaLinieros = {};
-}
-function persistRutaLinieros() {
-  fs.writeFile(RUTA_LINIEROS_FILE, JSON.stringify(rutaLinieros), () => {});
+async function deleteAllSharedRows() {
+  const { error } = await supabase.from('shared_rows').delete().neq('niu', '__never__');
+  if (error) throw error;
 }
 
-// ---------- SHARED RESULTS: one status per NIU, visible to every device ----------
-const SHARED_RESULTS_FILE = path.join(__dirname, 'shared-results.json');
-let sharedResults = {}; // { [niu]: { pagado, ultimoPago, estadoPago, fechaRegistroPago, checkedAt } }
-try {
-  if (fs.existsSync(SHARED_RESULTS_FILE)) {
-    sharedResults = JSON.parse(fs.readFileSync(SHARED_RESULTS_FILE, 'utf-8'));
-  }
-} catch (e) {
-  sharedResults = {};
+// ---------- SHARED CORTES: registros de suspensión de servicio ----------
+// Tabla Supabase: cortes(id text PK, niu, nombre, direccion, ruta, liniero, tipo, fecha, subido_cortes)
+function mapCorteFromDb(row) {
+  return {
+    id: row.id,
+    niu: row.niu,
+    nombre: row.nombre,
+    direccion: row.direccion,
+    ruta: row.ruta,
+    liniero: row.liniero,
+    tipo: row.tipo,
+    fecha: row.fecha,
+    subidoCortes: row.subido_cortes,
+  };
 }
-function persistSharedResults() {
-  fs.writeFile(SHARED_RESULTS_FILE, JSON.stringify(sharedResults), () => {});
+async function getCortes() {
+  const { data, error } = await supabase.from('cortes').select('*').order('fecha', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(mapCorteFromDb);
 }
-function recordSharedResult(niu, data) {
-  sharedResults[niu] = { ...data, checkedAt: new Date().toISOString() };
-  persistSharedResults();
+async function insertCorte(record) {
+  const { error } = await supabase.from('cortes').insert({
+    id: record.id,
+    niu: record.niu,
+    nombre: record.nombre,
+    direccion: record.direccion,
+    ruta: record.ruta,
+    liniero: record.liniero,
+    tipo: record.tipo,
+    fecha: record.fecha,
+    subido_cortes: false,
+  });
+  if (error) throw error;
+}
+async function marcarCorteSubido(id) {
+  const { data, error } = await supabase
+    .from('cortes')
+    .update({ subido_cortes: true })
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapCorteFromDb(data) : null;
 }
 
-// ---------- STATE: job queue (only ONE HTTP session runs at a time, everyone else queues) ----------
+// ---------- ASIGNACIÓN RUTA -> LINIERO ----------
+// Tabla Supabase: ruta_linieros(ruta text PK, liniero)
+async function getRutaLinieros() {
+  const { data, error } = await supabase.from('ruta_linieros').select('*');
+  if (error) throw error;
+  const obj = {};
+  (data || []).forEach((r) => { obj[r.ruta] = r.liniero; });
+  return obj;
+}
+async function setRutaLiniero(ruta, liniero) {
+  const { error } = await supabase.from('ruta_linieros').upsert({ ruta, liniero }, { onConflict: 'ruta' });
+  if (error) throw error;
+}
+
+// ---------- SHARED RESULTS: un estado de pago por NIU ----------
+// Tabla Supabase: shared_results(niu text PK, data jsonb, checked_at)
+async function getSharedResults() {
+  const { data, error } = await supabase.from('shared_results').select('niu, data');
+  if (error) throw error;
+  const obj = {};
+  (data || []).forEach((r) => { obj[r.niu] = r.data; });
+  return obj;
+}
+async function recordSharedResult(niu, resultData) {
+  const payload = { ...resultData, checkedAt: new Date().toISOString() };
+  const { error } = await supabase
+    .from('shared_results')
+    .upsert({ niu, data: payload, checked_at: payload.checkedAt }, { onConflict: 'niu' });
+  if (error) throw error;
+}
+async function deleteAllSharedResults() {
+  const { error } = await supabase.from('shared_results').delete().neq('niu', '__never__');
+  if (error) throw error;
+}
+
+// ---------- SHARED COMPARTIDOS: comprobantes ya compartidos ----------
+// Tabla Supabase: compartidos(id bigint identity PK, niu, numero_factura, liniero, fecha)
+async function getCompartidos() {
+  const { data, error } = await supabase.from('compartidos').select('*').order('fecha', { ascending: true });
+  if (error) throw error;
+  return (data || []).map((r) => ({ niu: r.niu, numeroFactura: r.numero_factura, liniero: r.liniero, fecha: r.fecha }));
+}
+async function insertCompartido(record) {
+  const { error } = await supabase.from('compartidos').insert({
+    niu: record.niu,
+    numero_factura: record.numeroFactura,
+    liniero: record.liniero,
+    fecha: record.fecha,
+  });
+  if (error) throw error;
+}
+
+// ---------- CICLO MENSUAL: el listado + resultados se reinician cada mes ----------
+// Tabla Supabase: month_tracker(id int PK = 1, month text) — una sola fila
+async function getDataMonth() {
+  const { data, error } = await supabase.from('month_tracker').select('month').eq('id', 1).maybeSingle();
+  if (error) throw error;
+  return data ? data.month : null;
+}
+async function setDataMonth(month) {
+  const { error } = await supabase.from('month_tracker').upsert({ id: 1, month }, { onConflict: 'id' });
+  if (error) throw error;
+}
+function currentMonthKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+async function resetMonthlyData() {
+  await Promise.all([deleteAllSharedRows(), deleteAllSharedResults()]);
+}
+async function checkMonthRollover() {
+  const now = currentMonthKey();
+  const dataMonth = await getDataMonth();
+  if (dataMonth === now) return;
+  // Primera vez que corre (no hay fila en month_tracker todavía): solo registra
+  // el mes sin borrar nada — evita reiniciar datos reales solo porque el
+  // servidor se desplegó a mitad de mes.
+  if (dataMonth !== null) {
+    await resetMonthlyData();
+  }
+  await setDataMonth(now);
+}
+
+// ---------- STATE: cola de jobs (solo UNA sesión HTTP corre a la vez, el resto se encola) ----------
 let jobs = {}; // jobId -> job object
-let queue = []; // array of { jobId, targetNius }
+let queue = []; // array de { jobId, targetNius }
 let processingQueue = false;
 
 function makeJobId() {
@@ -148,11 +249,8 @@ const LOGIN_PAGE_URL = process.env.PORTAL_LOGIN_URL || `${APEX_BASE}/r/enerputu/
 const HOME_PAGE_URL_BASE = `${APEX_BASE}/r/enerputu/facturas-eep/home`;
 
 // ---------- Minimal cookie jar (Node's fetch has no built-in cookie jar) ----------
-// Keeps cookies keyed by name+path — this portal sets TWO cookies with the SAME
-// name (X-Oracle-BMC-LBS-Route) but different paths. A real browser sends both
-// together; dropping one likely breaks load-balancer session affinity.
 class CookieJar {
-  constructor() { this.cookies = []; } // array of { name, value, path }
+  constructor() { this.cookies = []; }
   update(setCookieHeaders) {
     (setCookieHeaders || []).forEach((sc) => {
       const parts = sc.split(';').map((s) => s.trim());
@@ -197,7 +295,6 @@ async function httpRequest(url, options, jar) {
   return res;
 }
 
-// Follows redirects manually (so cookies set at each hop are captured), returns the final HTML body.
 async function followAndGetHtml(res, jar) {
   let current = res;
   let hops = 0;
@@ -211,10 +308,6 @@ async function followAndGetHtml(res, jar) {
   return current.text();
 }
 
-// Decodes JS string escapes (e.g. \/ or \u002F) exactly as a browser's JS
-// engine would when parsing the inline <script> — the portal isn't consistent
-// about which escape form it uses for forward slashes, so a narrow regex isn't
-// enough; this handles any standard JS string escape sequence.
 function decodeJsString(raw) {
   try {
     return JSON.parse('"' + raw + '"');
@@ -223,7 +316,6 @@ function decodeJsString(raw) {
   }
 }
 
-// Parses the hidden APEX form fields out of any page (login or home) needed to submit forms.
 function parsePageState(html) {
   const $ = cheerio.load(html);
   const state = {
@@ -235,8 +327,6 @@ function parsePageState(html) {
     salt: $('#pSalt').attr('value'),
     context: $('#pContext').attr('value'),
   };
-  // The popup LOV's ajaxIdentifier lives inside an inline <script>, e.g.
-  // apex.widget.popupLov({"itemId":"P1_INFOCLIE","ajaxIdentifier":"XXXX", ...})
   const scriptText = $('script').map((i, el) => $(el).html()).get().join('\n');
   const m = scriptText.match(/"itemId":"P1_INFOCLIE","ajaxIdentifier":"([^"]+)"/);
   state.ajaxIdentifier = m ? decodeJsString(m[1]) : null;
@@ -282,10 +372,6 @@ async function httpLogin(jar) {
     body: body.toString(),
   }, jar);
 
-  // The portal does NOT redirect and returns an essentially empty 200 response
-  // here (it only sets cookies) — the browser's own JS then navigates to the
-  // home page afterward. We replicate that: go straight to the home page,
-  // reusing the same instance/session id that was used for login.
   if (res.status >= 400) {
     const errText = await res.text().catch(() => '');
     throw new Error(`El portal respondió ${res.status} al enviar el login. ${errText.slice(0, 200)}`);
@@ -297,8 +383,6 @@ async function httpLogin(jar) {
   const homeState = parsePageState(homeHtml);
 
   if (!homeState.ajaxIdentifier || homeState.appUser === 'nobody' || !homeState.appUser) {
-    // Could be wrong credentials (portal sent us back to the login page), or
-    // the session id changed and we need to discover it another way.
     const looksLikeLoginPage = /P9999_USERNAME/.test(homeHtml);
     if (looksLikeLoginPage || homeState.appUser === 'nobody') {
       throw new Error(`El portal no nos reconoce como autenticados (APP_USER="${homeState.appUser}") — revisa PORTAL_USER / PORTAL_PASS en las variables de entorno.`);
@@ -308,7 +392,6 @@ async function httpLogin(jar) {
   return homeState;
 }
 
-// Searches the NIU popup (AJAX), returns the internal record id APEX expects (not the NIU itself).
 async function httpSearchNiu(jar, state, niu) {
   const body = new URLSearchParams();
   body.set('p_flow_id', state.flowId);
@@ -341,8 +424,6 @@ async function httpSearchNiu(jar, state, niu) {
   return match ? { internalId: match[1], display: match[0] } : null;
 }
 
-// Submits "Consultar" for the selected internal id — the portal does a FULL page
-// reload here (p_reload_on_submit=S), so the response is the entire results page.
 async function httpConsultar(jar, state, internalId) {
   const body = new URLSearchParams();
   body.set('p_flow_id', state.flowId);
@@ -372,16 +453,12 @@ async function httpConsultar(jar, state, internalId) {
     body: body.toString(),
   }, jar);
 
-  // Same situation as login: no real redirect, so re-fetch the page directly
-  // using the same session — this reflects the item value we just submitted
-  // (APEX stores page-item state server-side per session).
   const homeUrl = `${HOME_PAGE_URL_BASE}?session=${state.instance}`;
   const homeRes = await httpRequest(homeUrl, { method: 'GET' }, jar);
   const html = await followAndGetHtml(homeRes, jar);
-  return html; // caller re-parses page state from this + extracts the Pagos table
+  return html;
 }
 
-// Extracts the most recent row of the "Pagos" table from a results page's HTML.
 function extractPagoInfo(html) {
   const $ = cheerio.load(html);
   const container = $('[id^="R1694343654926727037"][id$="_data_panel"]');
@@ -394,10 +471,10 @@ function extractPagoInfo(html) {
   const facturaMatch = observaciones ? observaciones.match(/Pago Factura:\s*(\d+)/i) : null;
   return {
     empty: false,
-    fechaRegistroPago: cellText(0) || null, // "DD-MES-YYYY hh:mmAM/PM" — has the exact TIME
+    fechaRegistroPago: cellText(0) || null,
     estadoPago: cellText(1) || null,
     tipoPago: cellText(2) || null,
-    fechaPago: cellText(3) || null, // dd/mm/yyyy — date only
+    fechaPago: cellText(3) || null,
     valorPagado: cellText(4) || null,
     medioPago: cellText(5) || null,
     entidadRecaudo: cellText(6) || null,
@@ -412,16 +489,12 @@ function monthsEs() {
 }
 
 function parseFechaPago(fechaStr) {
-  // Expects "dd/mm/yyyy"
   if (!fechaStr) return null;
   const match = fechaStr.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (!match) return null;
   return { day: parseInt(match[1], 10), month: parseInt(match[2], 10) - 1, year: parseInt(match[3], 10) };
 }
 
-// Consults a single NIU using an already-logged-in session (jar + state).
-// Returns the payment info, and the FRESH page state (salt/submissionId rotate
-// on every full page load, so the caller must keep using the returned state).
 async function checkNiuHttp(jar, state, niu) {
   const found = await httpSearchNiu(jar, state, niu);
   if (!found) {
@@ -453,7 +526,7 @@ async function runScanJob(job, targetNius) {
   for (const item of targetNius) {
     try {
       const r = await checkNiuHttp(jar, state, item.niu);
-      state = r.state; // carry forward the rotated tokens for the next iteration
+      state = r.state;
       const fecha = r.fechaPago ? parseFechaPago(r.fechaPago) : null;
       const pagado = !!(
         fecha &&
@@ -477,7 +550,7 @@ async function runScanJob(job, targetNius) {
         pagado,
         diagnostico_seleccion: r.seleccionMostrada || null,
       });
-      recordSharedResult(item.niu, {
+      await recordSharedResult(item.niu, {
         pagado,
         ultimoPago: r.fechaPago || (r.empty ? 'Sin pagos registrados' : 'No disponible'),
         estadoPago: r.estadoPago || null,
@@ -501,66 +574,15 @@ async function runScanJob(job, targetNius) {
   }
 }
 
-// ---------- SHARED COMPARTIDOS: which paid receipts have already been shared ----------
-const COMPARTIDOS_FILE = path.join(__dirname, 'compartidos.json');
-let compartidos = []; // [{ niu, numeroFactura, fecha }]
-try {
-  if (fs.existsSync(COMPARTIDOS_FILE)) {
-    compartidos = JSON.parse(fs.readFileSync(COMPARTIDOS_FILE, 'utf-8'));
-  }
-} catch (e) {
-  compartidos = [];
-}
-function persistCompartidos() {
-  fs.writeFile(COMPARTIDOS_FILE, JSON.stringify(compartidos), () => {});
-}
-
-// ---------- MONTHLY DATA CYCLE: the matricula list + payment results reset each
-// month (a new month = a new operating cycle waiting for a fresh Excel upload).
-// Reports (cortes/notificaciones/comprobantes) are NEVER deleted — they stay
-// forever so past months remain visible in the indicadores month selector.
-const MONTH_TRACKER_FILE = path.join(__dirname, 'month-tracker.json');
-let dataMonth = null;
-try {
-  if (fs.existsSync(MONTH_TRACKER_FILE)) {
-    dataMonth = JSON.parse(fs.readFileSync(MONTH_TRACKER_FILE, 'utf-8')).month || null;
-  }
-} catch (e) {
-  dataMonth = null;
-}
-function currentMonthKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-function resetMonthlyData() {
-  sharedRows = [];
-  sharedResults = {};
-  persistSharedRows();
-  persistSharedResults();
-}
-function checkMonthRollover() {
-  const now = currentMonthKey();
-  if (dataMonth === now) return;
-  // First run ever (no tracker file yet) just records the month without wiping anything —
-  // avoids nuking real data just because the server was deployed mid-month.
-  if (dataMonth !== null) {
-    resetMonthlyData();
-  }
-  dataMonth = now;
-  fs.writeFile(MONTH_TRACKER_FILE, JSON.stringify({ month: dataMonth }), () => {});
-}
-
 // ---------- ROUTES ----------
 app.post('/api/scan/start', (req, res) => {
   let targetList;
   let label;
 
   if (req.body && Array.isArray(req.body.nius) && req.body.nius.length > 0) {
-    // Frontend sent an explicit list (usually extracted from an uploaded Excel)
     targetList = req.body.nius.map((n) => (typeof n === 'string' ? { niu: n } : n));
     label = req.body.ruta || `lista personalizada (${targetList.length})`;
   } else {
-    // Backward-compatible fallback: filter the bundled nius.json by ruta
     const ruta = (req.body && req.body.ruta) || (req.query && req.query.ruta) || null;
     targetList = ruta ? NIUS.filter((n) => String(n.ruta) === String(ruta)) : NIUS;
     label = ruta || 'todas';
@@ -597,57 +619,53 @@ app.get('/api/scan/results/:jobId', (req, res) => {
   res.json({ results: job.results, finishedAt: job.finishedAt, status: job.status, ruta: job.ruta });
 });
 
-app.post('/api/reset-mes', (req, res) => {
-  resetMonthlyData();
-  dataMonth = currentMonthKey();
-  fs.writeFile(MONTH_TRACKER_FILE, JSON.stringify({ month: dataMonth }), () => {});
+app.post('/api/reset-mes', ah(async (req, res) => {
+  await resetMonthlyData();
+  await setDataMonth(currentMonthKey());
   res.json({ ok: true, message: 'Listado y resultados de pago reiniciados. Los reportes de meses anteriores se conservan.' });
-});
+}));
 
-app.get('/api/data/rows', (req, res) => {
-  checkMonthRollover();
-  res.json({ rows: sharedRows });
-});
+app.get('/api/data/rows', ah(async (req, res) => {
+  await checkMonthRollover();
+  const rows = await getSharedRows();
+  res.json({ rows });
+}));
 
-app.post('/api/data/rows', (req, res) => {
-  checkMonthRollover();
+app.post('/api/data/rows', ah(async (req, res) => {
+  await checkMonthRollover();
   if (!req.body || !Array.isArray(req.body.rows)) {
     return res.status(400).json({ ok: false, message: 'Se esperaba { rows: [...] }' });
   }
-  // Merge by NIU: new data replaces old for matching NIUs (fresher saldo/atraso/etc),
-  // brand-new NIUs get added, and rows not present in this upload are left untouched.
-  const byNiu = {};
-  sharedRows.forEach((r) => { byNiu[r.niu] = r; });
+  const existingRows = await getSharedRows();
+  const existingNius = new Set(existingRows.map((r) => r.niu));
   let nuevos = 0;
   let actualizados = 0;
   req.body.rows.forEach((r) => {
-    if (byNiu[r.niu]) actualizados++; else nuevos++;
-    byNiu[r.niu] = r;
+    if (existingNius.has(r.niu)) actualizados++; else nuevos++;
   });
-  sharedRows = Object.values(byNiu);
-  persistSharedRows();
-  res.json({ ok: true, total: sharedRows.length, nuevos, actualizados });
-});
+  await upsertSharedRows(req.body.rows);
+  res.json({ ok: true, total: existingNius.size + nuevos, nuevos, actualizados });
+}));
 
-app.get('/api/results', (req, res) => {
-  checkMonthRollover();
-  res.json({ results: sharedResults });
-});
+app.get('/api/results', ah(async (req, res) => {
+  await checkMonthRollover();
+  const results = await getSharedResults();
+  res.json({ results });
+}));
 
-app.get('/api/cortes', (req, res) => {
-  checkMonthRollover();
-  res.json({ cortes });
-});
+app.get('/api/cortes', ah(async (req, res) => {
+  await checkMonthRollover();
+  const list = await getCortes();
+  res.json({ cortes: list });
+}));
 
-app.post('/api/cortes', (req, res) => {
-  checkMonthRollover();
+app.post('/api/cortes', ah(async (req, res) => {
+  await checkMonthRollover();
   const { niu, nombre, direccion, ruta, liniero, tipo, hora } = req.body || {};
   if (!niu || !liniero || !tipo) {
     return res.status(400).json({ ok: false, message: 'Se requiere niu, liniero y tipo' });
   }
   const now = new Date();
-  // If the liniero specified a different time (reporting a cut that happened earlier
-  // today), use today's date with that time; otherwise use the exact current moment.
   let fecha = now;
   if (hora) {
     const [h, m] = hora.split(':').map(Number);
@@ -660,32 +678,32 @@ app.post('/api/cortes', (req, res) => {
     direccion: direccion || null,
     ruta: ruta || null,
     liniero,
-    tipo, // 'poste' | 'pin' | 'notificacion'
+    tipo,
     fecha: fecha.toISOString(),
     subidoCortes: false,
   };
-  cortes.push(record);
-  persistCortes();
+  await insertCorte(record);
   res.json({ ok: true, record });
-});
+}));
 
-app.post('/api/cortes/:id/subido', (req, res) => {
-  const record = cortes.find((c) => c.id === req.params.id);
+app.post('/api/cortes/:id/subido', ah(async (req, res) => {
+  const record = await marcarCorteSubido(req.params.id);
   if (!record) return res.status(404).json({ ok: false, message: 'Corte no encontrado' });
-  record.subidoCortes = true;
-  persistCortes();
   res.json({ ok: true, record });
-});
+}));
 
-app.get('/api/rutas-linieros', (req, res) => res.json({ rutaLinieros }));
+app.get('/api/rutas-linieros', ah(async (req, res) => {
+  const rutaLinieros = await getRutaLinieros();
+  res.json({ rutaLinieros });
+}));
 
-app.post('/api/rutas-linieros', (req, res) => {
+app.post('/api/rutas-linieros', ah(async (req, res) => {
   const { ruta, liniero } = req.body || {};
   if (!ruta) return res.status(400).json({ ok: false, message: 'Se requiere ruta' });
-  rutaLinieros[ruta] = liniero || '';
-  persistRutaLinieros();
+  await setRutaLiniero(ruta, liniero || '');
+  const rutaLinieros = await getRutaLinieros();
   res.json({ ok: true, rutaLinieros });
-});
+}));
 
 app.get('/api/rutas', (req, res) => {
   const counts = {};
@@ -696,24 +714,30 @@ app.get('/api/rutas', (req, res) => {
 
 app.get('/api/nius', (req, res) => res.json(NIUS));
 
-app.get('/api/compartidos', (req, res) => {
-  checkMonthRollover();
-  res.json({ compartidos });
-});
+app.get('/api/compartidos', ah(async (req, res) => {
+  await checkMonthRollover();
+  const list = await getCompartidos();
+  res.json({ compartidos: list });
+}));
 
-app.post('/api/compartidos', (req, res) => {
-  checkMonthRollover();
+app.post('/api/compartidos', ah(async (req, res) => {
+  await checkMonthRollover();
   const { niu, numeroFactura, liniero } = req.body || {};
   if (!niu) return res.status(400).json({ ok: false, message: 'Se requiere niu' });
   const record = { niu, numeroFactura: numeroFactura || null, liniero: liniero || null, fecha: new Date().toISOString() };
-  compartidos.push(record);
-  persistCompartidos();
+  await insertCompartido(record);
   res.json({ ok: true, record });
-});
+}));
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-checkMonthRollover();
+// Middleware de errores — captura cualquier fallo de las rutas envueltas en ah(...)
+app.use((err, req, res, next) => {
+  console.error('Error en la petición:', err);
+  res.status(500).json({ ok: false, message: 'Error interno: ' + err.message });
+});
+
+checkMonthRollover().catch((err) => console.error('Error verificando el mes al iniciar:', err));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Servidor corriendo en puerto ' + PORT));
