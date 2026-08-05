@@ -5,6 +5,7 @@ const cheerio = require('cheerio');
 const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
+const ws = require('ws');
 
 const app = express();
 app.use(cors());
@@ -29,7 +30,9 @@ const NIUS = JSON.parse(fs.readFileSync(path.join(__dirname, 'nius.json'), 'utf-
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
   console.error('Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY en las variables de entorno');
 }
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY, {
+  realtime: { transport: ws },
+});
 
 // Envuelve una ruta async: si la promesa falla, el error llega al middleware
 // de errores en vez de dejar la petición colgada (Express 4 no captura esto solo).
