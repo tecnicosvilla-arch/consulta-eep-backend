@@ -57,9 +57,9 @@ async function updateTelefono(niu, telefono, celular) {
   const { data, error } = await supabase.from('shared_rows').select('data').eq('niu', niu).maybeSingle();
   if (error) throw error;
   if (!data) throw new Error('NIU no encontrado en el listado');
-  const merged = { ...data.data };
-  if (telefono !== undefined) merged.telefono = telefono || null;
-  if (celular !== undefined) merged.celular = celular || null;
+  const clean = (v) => (v && !/^0+$/.test(v) ? v : null);
+  if (telefono !== undefined) merged.telefono = clean(telefono);
+  if (celular !== undefined) merged.celular = clean(celular);
   const { error: upErr } = await supabase
     .from('shared_rows')
     .upsert({ niu, data: merged, updated_at: new Date().toISOString() }, { onConflict: 'niu' });
