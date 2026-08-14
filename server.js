@@ -40,31 +40,48 @@ function ah(fn) {
   return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 }
 
+function todayIso() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 // ---------- SHARED DATA: el listado del Excel subido, visible en todos los dispositivos ----------
-// Tabla Supabase: shared_rows(niu text PK, data jsonb, updated_at)
+// Tabla Supabase: shared_rows(niu text, fecha date, data jsonb, updated_at) — PK (niu, fecha)
+// Cada archivo subido queda como su propia "foto" del día (mismos NIU en distintos
+// días NO se sobreescriben entre sí — solo se sobreescribe si es el mismo día).
 async function getSharedRows() {
-  const { data, error } = await supabase.from('shared_rows').select('data');
+  const { data, error } = await supabase.from('shared_rows').select('niu, fecha, data');
   if (error) throw error;
-  return (data || []).map((r) => r.data);
+  // La columna `fecha` (date) manda sobre lo que pueda traer data.fecha, por si acaso.
+  return (data || []).map((r) => ({ ...r.data, niu: r.niu, fecha: r.fecha }));
 }
-async function upsertSharedRows(rows) {
+async function upsertSharedRows(rows, fecha) {
   if (rows.length === 0) return;
-  const records = rows.map((r) => ({ niu: r.niu, data: r, updated_at: new Date().toISOString() }));
-  const { error } = await supabase.from('shared_rows').upsert(records, { onConflict: 'niu' });
+  const records = rows.map((r) => ({
+    niu: r.niu,
+    fecha,
+    data: { ...r, fecha },
+    updated_at: new Date().toISOString(),
+  }));
+  const { error } = await supabase.from('shared_rows').upsert(records, { onConflict: 'niu,fecha' });
   if (error) throw error;
 }
+// El teléfono/celular es un dato "pegado" al NIU en general (no cambia por día),
+// así que se actualiza en TODAS las filas (todas las fechas) que existan de ese NIU.
 async function updateTelefono(niu, telefono, celular) {
-  const { data, error } = await supabase.from('shared_rows').select('data').eq('niu', niu).maybeSingle();
+  const { data, error } = await supabase.from('shared_rows').select('fecha, data').eq('niu', niu);
   if (error) throw error;
-  if (!data) throw new Error('NIU no encontrado en el listado');
+  if (!data || data.length === 0) throw new Error('NIU no encontrado en el listado');
   const clean = (v) => (v && !/^0+$/.test(v) ? v : null);
-  if (telefono !== undefined) merged.telefono = clean(telefono);
-  if (celular !== undefined) merged.celular = clean(celular);
-  const { error: upErr } = await supabase
-    .from('shared_rows')
-    .upsert({ niu, data: merged, updated_at: new Date().toISOString() }, { onConflict: 'niu' });
+  const updates = data.map((row) => {
+    const merged = { ...row.data };
+    if (telefono !== undefined) merged.telefono = clean(telefono);
+    if (celular !== undefined) merged.celular = clean(celular);
+    return { niu, fecha: row.fecha, data: merged, updated_at: new Date().toISOString() };
+  });
+  const { error: upErr } = await supabase.from('shared_rows').upsert(updates, { onConflict: 'niu,fecha' });
   if (upErr) throw upErr;
-  return merged;
+  return updates[0] ? updates[0].data : null;
 }
 async function deleteAllSharedRows() {
   const { error } = await supabase.from('shared_rows').delete().neq('niu', '__never__');
@@ -130,7 +147,7 @@ async function setRutaLiniero(ruta, liniero) {
   if (error) throw error;
 }
 
-// ---------- SHARED RESULTS: un estado de pago por NIU ----------
+// ---------- SHARED RESULTS: un estado de pago por NIU (real, confirmado en el portal) ----------
 // Tabla Supabase: shared_results(niu text PK, data jsonb, checked_at)
 async function getSharedResults() {
   const { data, error } = await supabase.from('shared_results').select('niu, data');
@@ -145,9 +162,39 @@ async function recordSharedResult(niu, resultData) {
     .from('shared_results')
     .upsert({ niu, data: payload, checked_at: payload.checkedAt }, { onConflict: 'niu' });
   if (error) throw error;
+  // Si el portal ya confirmó el pago real, la marca manual "pagado sin confirmar"
+  // (si existía) ya no hace falta — se limpia sola.
+  if (resultData.pagado) {
+    await deletePagoManual(niu).catch((e) => console.error('No se pudo limpiar pago manual de', niu, e));
+  }
 }
 async function deleteAllSharedResults() {
   const { error } = await supabase.from('shared_results').delete().neq('niu', '__never__');
+  if (error) throw error;
+}
+
+// ---------- PAGOS MANUALES: "el cliente me mostró que ya pagó" pero el portal aún no lo refleja ----------
+// Tabla Supabase: pagos_manuales(niu text PK, liniero, fecha timestamptz)
+// Global por NIU (no por día) — se limpia sola cuando el escaneo real confirma el pago.
+async function getPagosManuales() {
+  const { data, error } = await supabase.from('pagos_manuales').select('*');
+  if (error) throw error;
+  const obj = {};
+  (data || []).forEach((r) => { obj[r.niu] = { liniero: r.liniero, fecha: r.fecha }; });
+  return obj;
+}
+async function setPagoManual(niu, liniero) {
+  const { error } = await supabase
+    .from('pagos_manuales')
+    .upsert({ niu, liniero: liniero || null, fecha: new Date().toISOString() }, { onConflict: 'niu' });
+  if (error) throw error;
+}
+async function deletePagoManual(niu) {
+  const { error } = await supabase.from('pagos_manuales').delete().eq('niu', niu);
+  if (error) throw error;
+}
+async function deleteAllPagosManuales() {
+  const { error } = await supabase.from('pagos_manuales').delete().neq('niu', '__never__');
   if (error) throw error;
 }
 
@@ -184,7 +231,7 @@ function currentMonthKey() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 async function resetMonthlyData() {
-  await Promise.all([deleteAllSharedRows(), deleteAllSharedResults()]);
+  await Promise.all([deleteAllSharedRows(), deleteAllSharedResults(), deleteAllPagosManuales()]);
 }
 async function checkMonthRollover() {
   const now = currentMonthKey();
@@ -659,32 +706,58 @@ app.post('/api/data/rows', ah(async (req, res) => {
   if (!req.body || !Array.isArray(req.body.rows)) {
     return res.status(400).json({ ok: false, message: 'Se esperaba { rows: [...] }' });
   }
-  const existingRows = await getSharedRows();
-  const existingByNiu = {};
-  existingRows.forEach((r) => { existingByNiu[r.niu] = r; });
+  // La fecha viene del nombre del archivo (extraída en el frontend). Si no llega
+  // por algún motivo, se usa hoy como respaldo.
+  const fecha = req.body.fecha || todayIso();
+
+  const allExisting = await getSharedRows();
+  // "Última versión conocida" de cada NIU (sin importar el día) — de ahí se
+  // hereda el teléfono/celular si el archivo nuevo no lo trae.
+  const latestByNiu = {};
+  allExisting.forEach((r) => {
+    if (!latestByNiu[r.niu] || r.fecha > latestByNiu[r.niu].fecha) latestByNiu[r.niu] = r;
+  });
+  // Filas que YA existían para este mismo día (para el conteo nuevos/actualizados)
+  const existingForThisDate = new Set(allExisting.filter((r) => r.fecha === fecha).map((r) => r.niu));
 
   let nuevos = 0;
   let actualizados = 0;
   const mergedRows = req.body.rows.map((r) => {
-    const existing = existingByNiu[r.niu];
-    if (existing) actualizados++; else nuevos++;
-    const merged = { ...r };
-    // El teléfono/celular queda "pegado" al NIU: si este Excel no trae el
-    // dato, conservamos el que ya teníamos guardado (el nombre puede cambiar
-    // por venta del inmueble, pero el número de contacto sigue siendo válido).
-    if (!merged.telefono && existing && existing.telefono) merged.telefono = existing.telefono;
-    if (!merged.celular && existing && existing.celular) merged.celular = existing.celular;
+    if (existingForThisDate.has(r.niu)) actualizados++; else nuevos++;
+    const merged = { ...r, fecha };
+    const carry = latestByNiu[r.niu];
+    if (!merged.telefono && carry && carry.telefono) merged.telefono = carry.telefono;
+    if (!merged.celular && carry && carry.celular) merged.celular = carry.celular;
     return merged;
   });
 
-  await upsertSharedRows(mergedRows);
-  res.json({ ok: true, total: Object.keys(existingByNiu).length + nuevos, nuevos, actualizados });
+  await upsertSharedRows(mergedRows, fecha);
+
+  const totalNiusUnicos = new Set([...Object.keys(latestByNiu), ...mergedRows.map((r) => r.niu)]).size;
+  res.json({ ok: true, total: totalNiusUnicos, nuevos, actualizados, fecha });
 }));
 
 app.get('/api/results', ah(async (req, res) => {
   await checkMonthRollover();
   const results = await getSharedResults();
   res.json({ results });
+}));
+
+app.get('/api/pagos-manuales', ah(async (req, res) => {
+  const pagosManuales = await getPagosManuales();
+  res.json({ pagosManuales });
+}));
+
+app.post('/api/pagos-manuales', ah(async (req, res) => {
+  const { niu, liniero } = req.body || {};
+  if (!niu) return res.status(400).json({ ok: false, message: 'Se requiere niu' });
+  await setPagoManual(niu, liniero);
+  res.json({ ok: true });
+}));
+
+app.delete('/api/pagos-manuales/:niu', ah(async (req, res) => {
+  await deletePagoManual(req.params.niu);
+  res.json({ ok: true });
 }));
 
 app.get('/api/cortes', ah(async (req, res) => {
