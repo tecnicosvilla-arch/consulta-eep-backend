@@ -324,6 +324,47 @@ function extractPagoInfo(html) {
   };
 }
 
+// Facturas generadas del NIU (tabla "Total Facturado" del portal). Las columnas se
+// identifican por el id de cabecera que usa Oracle APEX en el atributo headers de cada celda.
+const COL_FACTURA = {
+  numero: 'C1683297112330620925',
+  periodo: 'C1683297296423620926',
+  total: 'C1683297630450620930',
+  vencimiento: 'C1683298278603620936',
+};
+
+// "$11.513,00" -> 11513
+function parseMonto(txt) {
+  if (!txt) return null;
+  const n = Number(String(txt).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+}
+
+function extractFacturas(html) {
+  const $ = cheerio.load(html);
+  const facturas = [];
+  $(`td[headers="${COL_FACTURA.numero}"]`).each((i, el) => {
+    const tr = $(el).closest('tr');
+    const celda = (col) => tr.find(`td[headers="${col}"]`).first().text().trim();
+    const total = celda(COL_FACTURA.total);
+    facturas.push({
+      numero: celda(COL_FACTURA.numero),
+      periodo: celda(COL_FACTURA.periodo),
+      total,
+      monto: parseMonto(total),
+      vencimiento: celda(COL_FACTURA.vencimiento),
+    });
+  });
+  return facturas;
+}
+
+// Facturas aún sin pagar: las posteriores a la última factura pagada (los números crecen con el tiempo).
+// Sin pagos registrados, todas las facturas listadas están pendientes.
+function facturasPendientes(facturas, numeroFacturaPagada) {
+  const pagada = Number(numeroFacturaPagada);
+  if (!numeroFacturaPagada || !Number.isFinite(pagada)) return facturas;
+  return facturas.filter((f) => Number(f.numero) > pagada);
+}
 function monthsEs() {
   return ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 }
@@ -343,7 +384,8 @@ async function checkNiuHttp(jar, state, niu) {
   const html = await httpConsultar(jar, state, found.internalId);
   const newState = parsePageState(html);
   const pago = extractPagoInfo(html);
-  return { encontrado: true, seleccionMostrada: found.display, ...pago, state: newState.ajaxIdentifier ? newState : state };
+  const facturas = extractFacturas(html);
+  return { encontrado: true, seleccionMostrada: found.display, facturas, ...pago, state: newState.ajaxIdentifier ? newState : state };
 }
 
 async function runScanJob(job, targetNius) {
@@ -388,6 +430,7 @@ async function runScanJob(job, targetNius) {
         entidadRecaudo: r.entidadRecaudo || null,
         numeroCuenta: r.numeroCuenta || null,
         numeroFactura: r.numeroFactura || null,
+        facturas: r.facturas || [],
         pagado,
         diagnostico_seleccion: r.seleccionMostrada || null,
       });
@@ -445,7 +488,21 @@ app.post('/api/consulta', async (req, res) => {
   if (!r || String(r.ultimoPago || '').startsWith('ERROR:')) {
     return res.json({ ok: false, message: r ? r.ultimoPago : 'No se pudo consultar' });
   }
-  res.json({ ok: true, ultimoPago: r.ultimoPago, alDia: r.pagado, estadoPago: r.estadoPago || null });
+  let adeudado = null;
+  let pendientes = [];
+  if (!r.pagado) {
+    pendientes = facturasPendientes(r.facturas || [], r.numeroFactura);
+    adeudado = pendientes.reduce((s, f) => s + (f.monto || 0), 0);
+  }
+  res.json({
+    ok: true,
+    ultimoPago: r.ultimoPago,
+    alDia: r.pagado,
+    valorPagado: r.valorPagado || null,
+    estadoPago: r.estadoPago || null,
+    adeudado,
+    facturasPendientes: pendientes.map((f) => ({ periodo: f.periodo, total: f.total, vencimiento: f.vencimiento })),
+  });
 });
 
 app.get('/api/scan/status/:jobId', (req, res) => {
