@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cheerio = require('cheerio');
+const pdfParse = require('pdf-parse/lib/pdf-parse.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -347,7 +348,9 @@ function extractFacturas(html) {
     const tr = $(el).closest('tr');
     const celda = (col) => tr.find(`td[headers="${col}"]`).first().text().trim();
     const total = celda(COL_FACTURA.total);
+    const dialogo = (tr.find('a[href*="p2_factura"]').attr('href') || '').match(/dialog\('([^']+)'/);
     facturas.push({
+      pdfUrl: dialogo ? new URL(decodeJsString(dialogo[1]), 'https://appthunder.conoracle.com').toString() : null,
       numero: celda(COL_FACTURA.numero),
       periodo: celda(COL_FACTURA.periodo),
       total,
@@ -364,6 +367,34 @@ function facturasPendientes(facturas, numeroFacturaPagada) {
   const pagada = Number(numeroFacturaPagada);
   if (!numeroFacturaPagada || !Number.isFinite(pagada)) return facturas;
   return facturas.filter((f) => Number(f.numero) > pagada);
+}
+// Descarga el PDF de una factura (con la sesión ya abierta) y saca el consumo del mes en kWh,
+// que aparece en la línea "VR. Consumo de Energía (19kWh x $937.46/kWh)". Devuelve null si no se puede leer.
+async function consumoDeFactura(jar, pdfUrl) {
+  try {
+    let res = await httpRequest(pdfUrl, { method: 'GET', headers: { 'sec-fetch-dest': 'iframe', 'sec-fetch-mode': 'navigate' } }, jar);
+    let hops = 0;
+    while (res.status >= 300 && res.status < 400 && hops++ < 5) {
+      res = await httpRequest(new URL(res.headers.get('location'), APEX_BASE).toString(), { method: 'GET' }, jar);
+    }
+    let tipo = res.headers.get('content-type') || '';
+    // Si el diálogo devuelve una página HTML que apunta al PDF, se sigue ese enlace una vez.
+    if (!/pdf/i.test(tipo)) {
+      const html = await res.text();
+      const $ = cheerio.load(html);
+      const src = $('iframe[src], embed[src], object[data]').first().attr('src') || $('object[data]').first().attr('data');
+      if (!src) return null;
+      res = await httpRequest(new URL(src, pdfUrl).toString(), { method: 'GET' }, jar);
+      tipo = res.headers.get('content-type') || '';
+      if (!/pdf/i.test(tipo)) return null;
+    }
+    const { text } = await pdfParse(Buffer.from(await res.arrayBuffer()));
+    const m = text.match(/Consumo de Energ\S*\s*\(\s*(\d+(?:[.,]\d+)?)\s*kWh/i);
+    return m ? Number(m[1].replace(',', '.')) : null;
+  } catch (e) {
+    console.error('No se pudo leer el consumo del PDF:', e.message);
+    return null;
+  }
 }
 function monthsEs() {
   return ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -418,10 +449,16 @@ async function runScanJob(job, targetNius) {
         r.estadoPago &&
         r.estadoPago.toLowerCase().includes('aplicado')
       );
+      let consumoKwh = null;
+      if (job.incluirConsumo && r.facturas && r.facturas.length > 0) {
+        const ultima = r.facturas.reduce((a, b) => (Number(b.numero) > Number(a.numero) ? b : a));
+        if (ultima.pdfUrl) consumoKwh = await consumoDeFactura(jar, ultima.pdfUrl);
+      }
       job.results.push({
         niu: item.niu,
         nombre: item.nombre,
         direccion: item.direccion,
+        consumoKwh,
         ultimoPago: r.fechaPago || (r.empty ? 'Sin pagos registrados' : 'No disponible'),
         estadoPago: r.estadoPago || null,
         fechaRegistroPago: r.fechaRegistroPago || null,
@@ -477,7 +514,7 @@ app.post('/api/scan/start', (req, res) => {
 app.post('/api/consulta', async (req, res) => {
   const { niu, credenciales } = req.body || {};
   if (!niu) return res.status(400).json({ ok: false, message: 'Se requiere el NIU' });
-  const job = { credenciales, results: [], progress: 0, error: null };
+  const job = { credenciales, incluirConsumo: true, results: [], progress: 0, error: null };
   try {
     await runScanJob(job, [{ niu: String(niu) }]);
   } catch (e) {
@@ -501,6 +538,7 @@ app.post('/api/consulta', async (req, res) => {
     valorPagado: r.valorPagado || null,
     estadoPago: r.estadoPago || null,
     adeudado,
+    consumoKwh: r.consumoKwh,
     facturasPendientes: pendientes.map((f) => ({ periodo: f.periodo, total: f.total, vencimiento: f.vencimiento })),
   });
 });
