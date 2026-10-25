@@ -429,6 +429,25 @@ app.post('/api/scan/start', (req, res) => {
   res.json({ ok: true, jobId, message });
 });
 
+// Consulta puntual de un NIU (la usa Mi ruta): responde cuándo fue el último pago y si está al día.
+// Las credenciales llegan en la petición, se usan en memoria y no se guardan.
+app.post('/api/consulta', async (req, res) => {
+  const { niu, credenciales } = req.body || {};
+  if (!niu) return res.status(400).json({ ok: false, message: 'Se requiere el NIU' });
+  const job = { credenciales, results: [], progress: 0, error: null };
+  try {
+    await runScanJob(job, [{ niu: String(niu) }]);
+  } catch (e) {
+    job.error = e.message;
+  }
+  const r = job.results[0];
+  if (job.error) return res.json({ ok: false, message: job.error });
+  if (!r || String(r.ultimoPago || '').startsWith('ERROR:')) {
+    return res.json({ ok: false, message: r ? r.ultimoPago : 'No se pudo consultar' });
+  }
+  res.json({ ok: true, ultimoPago: r.ultimoPago, alDia: r.pagado, estadoPago: r.estadoPago || null });
+});
+
 app.get('/api/scan/status/:jobId', (req, res) => {
   const job = jobs[req.params.jobId];
   if (!job) return res.status(404).json({ error: 'Job no encontrado (puede haber expirado)' });
