@@ -4,8 +4,6 @@ const cors = require('cors');
 const cheerio = require('cheerio');
 const fs = require('fs');
 const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
-const ws = require('ws');
 
 const app = express();
 app.use(cors());
@@ -19,232 +17,9 @@ process.on('uncaughtException', (err) => {
 });
 
 // ---------- CONFIG ----------
-const USERNAME = process.env.PORTAL_USER;
-const PASSWORD = process.env.PORTAL_PASS;
-
 // nius.json sigue siendo un archivo estático incluido en el backend — nunca se
-// escribe desde la app, así que no necesita vivir en Supabase.
+// escribe desde la app.
 const NIUS = JSON.parse(fs.readFileSync(path.join(__dirname, 'nius.json'), 'utf-8'));
-
-// ---------- SUPABASE ----------
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-  console.error('Faltan SUPABASE_URL / SUPABASE_SERVICE_KEY en las variables de entorno');
-}
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY, {
-  realtime: { transport: ws },
-});
-
-// Envuelve una ruta async: si la promesa falla, el error llega al middleware
-// de errores en vez de dejar la petición colgada (Express 4 no captura esto solo).
-function ah(fn) {
-  return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
-}
-
-function todayIso() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-// ---------- SHARED DATA: el listado del Excel subido, visible en todos los dispositivos ----------
-// Tabla Supabase: shared_rows(niu text, fecha date, data jsonb, updated_at) — PK (niu, fecha)
-// Cada archivo subido queda como su propia "foto" del día (mismos NIU en distintos
-// días NO se sobreescriben entre sí — solo se sobreescribe si es el mismo día).
-async function getSharedRows() {
-  const { data, error } = await supabase.from('shared_rows').select('niu, fecha, data');
-  if (error) throw error;
-  // La columna `fecha` (date) manda sobre lo que pueda traer data.fecha, por si acaso.
-  return (data || []).map((r) => ({ ...r.data, niu: r.niu, fecha: r.fecha }));
-}
-async function upsertSharedRows(rows, fecha) {
-  if (rows.length === 0) return;
-  const records = rows.map((r) => ({
-    niu: r.niu,
-    fecha,
-    data: { ...r, fecha },
-    updated_at: new Date().toISOString(),
-  }));
-  const { error } = await supabase.from('shared_rows').upsert(records, { onConflict: 'niu,fecha' });
-  if (error) throw error;
-}
-// El teléfono/celular es un dato "pegado" al NIU en general (no cambia por día),
-// así que se actualiza en TODAS las filas (todas las fechas) que existan de ese NIU.
-async function updateTelefono(niu, telefono, celular) {
-  const { data, error } = await supabase.from('shared_rows').select('fecha, data').eq('niu', niu);
-  if (error) throw error;
-  if (!data || data.length === 0) throw new Error('NIU no encontrado en el listado');
-  const clean = (v) => (v && !/^0+$/.test(v) ? v : null);
-  const updates = data.map((row) => {
-    const merged = { ...row.data };
-    if (telefono !== undefined) merged.telefono = clean(telefono);
-    if (celular !== undefined) merged.celular = clean(celular);
-    return { niu, fecha: row.fecha, data: merged, updated_at: new Date().toISOString() };
-  });
-  const { error: upErr } = await supabase.from('shared_rows').upsert(updates, { onConflict: 'niu,fecha' });
-  if (upErr) throw upErr;
-  return updates[0] ? updates[0].data : null;
-}
-async function deleteAllSharedRows() {
-  const { error } = await supabase.from('shared_rows').delete().neq('niu', '__never__');
-  if (error) throw error;
-}
-
-// ---------- SHARED CORTES: registros de suspensión de servicio ----------
-// Tabla Supabase: cortes(id text PK, niu, nombre, direccion, ruta, liniero, tipo, fecha, subido_cortes)
-function mapCorteFromDb(row) {
-  return {
-    id: row.id,
-    niu: row.niu,
-    nombre: row.nombre,
-    direccion: row.direccion,
-    ruta: row.ruta,
-    liniero: row.liniero,
-    tipo: row.tipo,
-    fecha: row.fecha,
-    subidoCortes: row.subido_cortes,
-  };
-}
-async function getCortes() {
-  const { data, error } = await supabase.from('cortes').select('*').order('fecha', { ascending: true });
-  if (error) throw error;
-  return (data || []).map(mapCorteFromDb);
-}
-async function insertCorte(record) {
-  const { error } = await supabase.from('cortes').insert({
-    id: record.id,
-    niu: record.niu,
-    nombre: record.nombre,
-    direccion: record.direccion,
-    ruta: record.ruta,
-    liniero: record.liniero,
-    tipo: record.tipo,
-    fecha: record.fecha,
-    subido_cortes: false,
-  });
-  if (error) throw error;
-}
-async function marcarCorteSubido(id) {
-  const { data, error } = await supabase
-    .from('cortes')
-    .update({ subido_cortes: true })
-    .eq('id', id)
-    .select()
-    .maybeSingle();
-  if (error) throw error;
-  return data ? mapCorteFromDb(data) : null;
-}
-
-// ---------- ASIGNACIÓN RUTA -> LINIERO ----------
-// Tabla Supabase: ruta_linieros(ruta text PK, liniero)
-async function getRutaLinieros() {
-  const { data, error } = await supabase.from('ruta_linieros').select('*');
-  if (error) throw error;
-  const obj = {};
-  (data || []).forEach((r) => { obj[r.ruta] = r.liniero; });
-  return obj;
-}
-async function setRutaLiniero(ruta, liniero) {
-  const { error } = await supabase.from('ruta_linieros').upsert({ ruta, liniero }, { onConflict: 'ruta' });
-  if (error) throw error;
-}
-
-// ---------- SHARED RESULTS: un estado de pago por NIU (real, confirmado en el portal) ----------
-// Tabla Supabase: shared_results(niu text PK, data jsonb, checked_at)
-async function getSharedResults() {
-  const { data, error } = await supabase.from('shared_results').select('niu, data');
-  if (error) throw error;
-  const obj = {};
-  (data || []).forEach((r) => { obj[r.niu] = r.data; });
-  return obj;
-}
-async function recordSharedResult(niu, resultData) {
-  const payload = { ...resultData, checkedAt: new Date().toISOString() };
-  const { error } = await supabase
-    .from('shared_results')
-    .upsert({ niu, data: payload, checked_at: payload.checkedAt }, { onConflict: 'niu' });
-  if (error) throw error;
-  // Si el portal ya confirmó el pago real, la marca manual "pagado sin confirmar"
-  // (si existía) ya no hace falta — se limpia sola.
-  if (resultData.pagado) {
-    await deletePagoManual(niu).catch((e) => console.error('No se pudo limpiar pago manual de', niu, e));
-  }
-}
-async function deleteAllSharedResults() {
-  const { error } = await supabase.from('shared_results').delete().neq('niu', '__never__');
-  if (error) throw error;
-}
-
-// ---------- PAGOS MANUALES: "el cliente me mostró que ya pagó" pero el portal aún no lo refleja ----------
-// Tabla Supabase: pagos_manuales(niu text PK, liniero, fecha timestamptz)
-// Global por NIU (no por día) — se limpia sola cuando el escaneo real confirma el pago.
-async function getPagosManuales() {
-  const { data, error } = await supabase.from('pagos_manuales').select('*');
-  if (error) throw error;
-  const obj = {};
-  (data || []).forEach((r) => { obj[r.niu] = { liniero: r.liniero, fecha: r.fecha }; });
-  return obj;
-}
-async function setPagoManual(niu, liniero) {
-  const { error } = await supabase
-    .from('pagos_manuales')
-    .upsert({ niu, liniero: liniero || null, fecha: new Date().toISOString() }, { onConflict: 'niu' });
-  if (error) throw error;
-}
-async function deletePagoManual(niu) {
-  const { error } = await supabase.from('pagos_manuales').delete().eq('niu', niu);
-  if (error) throw error;
-}
-async function deleteAllPagosManuales() {
-  const { error } = await supabase.from('pagos_manuales').delete().neq('niu', '__never__');
-  if (error) throw error;
-}
-
-// ---------- SHARED COMPARTIDOS: comprobantes ya compartidos ----------
-// Tabla Supabase: compartidos(id bigint identity PK, niu, numero_factura, liniero, fecha)
-async function getCompartidos() {
-  const { data, error } = await supabase.from('compartidos').select('*').order('fecha', { ascending: true });
-  if (error) throw error;
-  return (data || []).map((r) => ({ niu: r.niu, numeroFactura: r.numero_factura, liniero: r.liniero, fecha: r.fecha }));
-}
-async function insertCompartido(record) {
-  const { error } = await supabase.from('compartidos').insert({
-    niu: record.niu,
-    numero_factura: record.numeroFactura,
-    liniero: record.liniero,
-    fecha: record.fecha,
-  });
-  if (error) throw error;
-}
-
-// ---------- CICLO MENSUAL: el listado + resultados se reinician cada mes ----------
-// Tabla Supabase: month_tracker(id int PK = 1, month text) — una sola fila
-async function getDataMonth() {
-  const { data, error } = await supabase.from('month_tracker').select('month').eq('id', 1).maybeSingle();
-  if (error) throw error;
-  return data ? data.month : null;
-}
-async function setDataMonth(month) {
-  const { error } = await supabase.from('month_tracker').upsert({ id: 1, month }, { onConflict: 'id' });
-  if (error) throw error;
-}
-function currentMonthKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-async function resetMonthlyData() {
-  await Promise.all([deleteAllSharedRows(), deleteAllSharedResults(), deleteAllPagosManuales()]);
-}
-async function checkMonthRollover() {
-  const now = currentMonthKey();
-  const dataMonth = await getDataMonth();
-  if (dataMonth === now) return;
-  // Primera vez que corre (no hay fila en month_tracker todavía): solo registra
-  // el mes sin borrar nada — evita reiniciar datos reales solo porque el
-  // servidor se desplegó a mitad de mes.
-  if (dataMonth !== null) {
-    await resetMonthlyData();
-  }
-  await setDataMonth(now);
-}
 
 // ---------- STATE: cola de jobs (solo UNA sesión HTTP corre a la vez, el resto se encola) ----------
 let jobs = {}; // jobId -> job object
@@ -265,9 +40,10 @@ function pruneOldJobs() {
   }
 }
 
-function createJob(targetNius, label) {
+function createJob(targetNius, label, credenciales) {
   const jobId = makeJobId();
   jobs[jobId] = {
+    credenciales, // solo en memoria; se descarta al terminar el escaneo
     id: jobId,
     status: 'queued',
     progress: 0,
@@ -300,6 +76,7 @@ async function processQueue() {
     job.status = 'running';
     job.startedAt = new Date().toISOString();
     await runScanJob(job, targetNius);
+    delete job.credenciales;
     job.status = job.error ? 'error' : 'done';
     job.finishedAt = new Date().toISOString();
   }
@@ -398,7 +175,7 @@ function parsePageState(html) {
   return state;
 }
 
-async function httpLogin(jar) {
+async function httpLogin(jar, { usuario: USERNAME, clave: PASSWORD }) {
   let res = await httpRequest(LOGIN_PAGE_URL, { method: 'GET' }, jar);
   const loginHtml = await followAndGetHtml(res, jar);
   const state = parsePageState(loginHtml);
@@ -448,7 +225,7 @@ async function httpLogin(jar) {
   if (!homeState.ajaxIdentifier || homeState.appUser === 'nobody' || !homeState.appUser) {
     const looksLikeLoginPage = /P9999_USERNAME/.test(homeHtml);
     if (looksLikeLoginPage || homeState.appUser === 'nobody') {
-      throw new Error(`El portal no nos reconoce como autenticados (APP_USER="${homeState.appUser}") — revisa PORTAL_USER / PORTAL_PASS en las variables de entorno.`);
+      throw new Error(`El portal no nos reconoce como autenticados (APP_USER="${homeState.appUser}") — revisa las credenciales (botón 🔑).`);
     }
     throw new Error('Login no confirmado — el portal no devolvió la página esperada (revisa la respuesta cruda si esto persiste).');
   }
@@ -570,15 +347,16 @@ async function checkNiuHttp(jar, state, niu) {
 }
 
 async function runScanJob(job, targetNius) {
-  if (!USERNAME || !PASSWORD) {
-    job.error = 'Faltan PORTAL_USER / PORTAL_PASS en las variables de entorno';
+  const cred = job.credenciales;
+  if (!cred || !cred.usuario || !cred.clave) {
+    job.error = 'Faltan las credenciales del portal — configúralas con el botón 🔑';
     return;
   }
 
   const jar = new CookieJar();
   let state;
   try {
-    state = await httpLogin(jar);
+    state = await httpLogin(jar, cred);
   } catch (e) {
     job.error = 'No se pudo iniciar sesión: ' + e.message;
     return;
@@ -613,17 +391,6 @@ async function runScanJob(job, targetNius) {
         pagado,
         diagnostico_seleccion: r.seleccionMostrada || null,
       });
-      await recordSharedResult(item.niu, {
-        pagado,
-        ultimoPago: r.fechaPago || (r.empty ? 'Sin pagos registrados' : 'No disponible'),
-        estadoPago: r.estadoPago || null,
-        fechaRegistroPago: r.fechaRegistroPago || null,
-        valorPagado: r.valorPagado || null,
-        medioPago: r.medioPago || null,
-        entidadRecaudo: r.entidadRecaudo || null,
-        numeroCuenta: r.numeroCuenta || null,
-        numeroFactura: r.numeroFactura || null,
-      });
     } catch (e) {
       job.results.push({
         niu: item.niu,
@@ -653,7 +420,7 @@ app.post('/api/scan/start', (req, res) => {
 
   if (targetList.length === 0) return res.json({ ok: false, message: 'La lista de matriculas está vacía' });
 
-  const jobId = createJob(targetList, label);
+  const jobId = createJob(targetList, label, req.body && req.body.credenciales);
   const pos = queuePosition(jobId);
   const message = pos && pos > 1
     ? `En cola (posición ${pos}) — ${targetList.length} matriculas, alguien más está usando el servidor`
@@ -682,136 +449,6 @@ app.get('/api/scan/results/:jobId', (req, res) => {
   res.json({ results: job.results, finishedAt: job.finishedAt, status: job.status, ruta: job.ruta });
 });
 
-app.post('/api/reset-mes', ah(async (req, res) => {
-  await resetMonthlyData();
-  await setDataMonth(currentMonthKey());
-  res.json({ ok: true, message: 'Listado y resultados de pago reiniciados. Los reportes de meses anteriores se conservan.' });
-}));
-
-app.get('/api/data/rows', ah(async (req, res) => {
-  await checkMonthRollover();
-  const rows = await getSharedRows();
-  res.json({ rows });
-}));
-
-app.post('/api/data/telefono', ah(async (req, res) => {
-  const { niu, telefono, celular } = req.body || {};
-  if (!niu) return res.status(400).json({ ok: false, message: 'Se requiere niu' });
-  const row = await updateTelefono(niu, telefono, celular);
-  res.json({ ok: true, row });
-}));
-
-app.post('/api/data/rows', ah(async (req, res) => {
-  await checkMonthRollover();
-  if (!req.body || !Array.isArray(req.body.rows)) {
-    return res.status(400).json({ ok: false, message: 'Se esperaba { rows: [...] }' });
-  }
-  // La fecha viene del nombre del archivo (extraída en el frontend). Si no llega
-  // por algún motivo, se usa hoy como respaldo.
-  const fecha = req.body.fecha || todayIso();
-
-  const allExisting = await getSharedRows();
-  // "Última versión conocida" de cada NIU (sin importar el día) — de ahí se
-  // hereda el teléfono/celular si el archivo nuevo no lo trae.
-  const latestByNiu = {};
-  allExisting.forEach((r) => {
-    if (!latestByNiu[r.niu] || r.fecha > latestByNiu[r.niu].fecha) latestByNiu[r.niu] = r;
-  });
-  // Filas que YA existían para este mismo día (para el conteo nuevos/actualizados)
-  const existingForThisDate = new Set(allExisting.filter((r) => r.fecha === fecha).map((r) => r.niu));
-
-  let nuevos = 0;
-  let actualizados = 0;
-  const mergedRows = req.body.rows.map((r) => {
-    if (existingForThisDate.has(r.niu)) actualizados++; else nuevos++;
-    const merged = { ...r, fecha };
-    const carry = latestByNiu[r.niu];
-    if (!merged.telefono && carry && carry.telefono) merged.telefono = carry.telefono;
-    if (!merged.celular && carry && carry.celular) merged.celular = carry.celular;
-    return merged;
-  });
-
-  await upsertSharedRows(mergedRows, fecha);
-
-  const totalNiusUnicos = new Set([...Object.keys(latestByNiu), ...mergedRows.map((r) => r.niu)]).size;
-  res.json({ ok: true, total: totalNiusUnicos, nuevos, actualizados, fecha });
-}));
-
-app.get('/api/results', ah(async (req, res) => {
-  await checkMonthRollover();
-  const results = await getSharedResults();
-  res.json({ results });
-}));
-
-app.get('/api/pagos-manuales', ah(async (req, res) => {
-  const pagosManuales = await getPagosManuales();
-  res.json({ pagosManuales });
-}));
-
-app.post('/api/pagos-manuales', ah(async (req, res) => {
-  const { niu, liniero } = req.body || {};
-  if (!niu) return res.status(400).json({ ok: false, message: 'Se requiere niu' });
-  await setPagoManual(niu, liniero);
-  res.json({ ok: true });
-}));
-
-app.delete('/api/pagos-manuales/:niu', ah(async (req, res) => {
-  await deletePagoManual(req.params.niu);
-  res.json({ ok: true });
-}));
-
-app.get('/api/cortes', ah(async (req, res) => {
-  await checkMonthRollover();
-  const list = await getCortes();
-  res.json({ cortes: list });
-}));
-
-app.post('/api/cortes', ah(async (req, res) => {
-  await checkMonthRollover();
-  const { niu, nombre, direccion, ruta, liniero, tipo, hora } = req.body || {};
-  if (!niu || !liniero || !tipo) {
-    return res.status(400).json({ ok: false, message: 'Se requiere niu, liniero y tipo' });
-  }
-  const now = new Date();
-  let fecha = now;
-  if (hora) {
-    const [h, m] = hora.split(':').map(Number);
-    fecha = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
-  }
-  const record = {
-    id: 'corte_' + now.getTime() + '_' + Math.random().toString(36).slice(2, 8),
-    niu,
-    nombre: nombre || null,
-    direccion: direccion || null,
-    ruta: ruta || null,
-    liniero,
-    tipo,
-    fecha: fecha.toISOString(),
-    subidoCortes: false,
-  };
-  await insertCorte(record);
-  res.json({ ok: true, record });
-}));
-
-app.post('/api/cortes/:id/subido', ah(async (req, res) => {
-  const record = await marcarCorteSubido(req.params.id);
-  if (!record) return res.status(404).json({ ok: false, message: 'Corte no encontrado' });
-  res.json({ ok: true, record });
-}));
-
-app.get('/api/rutas-linieros', ah(async (req, res) => {
-  const rutaLinieros = await getRutaLinieros();
-  res.json({ rutaLinieros });
-}));
-
-app.post('/api/rutas-linieros', ah(async (req, res) => {
-  const { ruta, liniero } = req.body || {};
-  if (!ruta) return res.status(400).json({ ok: false, message: 'Se requiere ruta' });
-  await setRutaLiniero(ruta, liniero || '');
-  const rutaLinieros = await getRutaLinieros();
-  res.json({ ok: true, rutaLinieros });
-}));
-
 app.get('/api/rutas', (req, res) => {
   const counts = {};
   NIUS.forEach((n) => { counts[n.ruta] = (counts[n.ruta] || 0) + 1; });
@@ -821,30 +458,13 @@ app.get('/api/rutas', (req, res) => {
 
 app.get('/api/nius', (req, res) => res.json(NIUS));
 
-app.get('/api/compartidos', ah(async (req, res) => {
-  await checkMonthRollover();
-  const list = await getCompartidos();
-  res.json({ compartidos: list });
-}));
-
-app.post('/api/compartidos', ah(async (req, res) => {
-  await checkMonthRollover();
-  const { niu, numeroFactura, liniero } = req.body || {};
-  if (!niu) return res.status(400).json({ ok: false, message: 'Se requiere niu' });
-  const record = { niu, numeroFactura: numeroFactura || null, liniero: liniero || null, fecha: new Date().toISOString() };
-  await insertCompartido(record);
-  res.json({ ok: true, record });
-}));
-
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-// Middleware de errores — captura cualquier fallo de las rutas envueltas en ah(...)
+// Middleware de errores
 app.use((err, req, res, next) => {
   console.error('Error en la petición:', err);
   res.status(500).json({ ok: false, message: 'Error interno: ' + err.message });
 });
-
-checkMonthRollover().catch((err) => console.error('Error verificando el mes al iniciar:', err));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log('Servidor corriendo en puerto ' + PORT));
