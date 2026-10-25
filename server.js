@@ -41,10 +41,12 @@ function pruneOldJobs() {
   }
 }
 
-function createJob(targetNius, label, credenciales) {
+function createJob(targetNius, label, credenciales, incluirConsumo) {
   const jobId = makeJobId();
   jobs[jobId] = {
     credenciales, // solo en memoria; se descarta al terminar el escaneo
+    incluirConsumo: !!incluirConsumo,
+    cancelado: false,
     id: jobId,
     status: 'queued',
     progress: 0,
@@ -419,6 +421,19 @@ async function checkNiuHttp(jar, state, niu) {
   return { encontrado: true, seleccionMostrada: found.display, facturas, ...pago, state: newState.ajaxIdentifier ? newState : state };
 }
 
+// Lo que necesita Mi ruta de cada NIU: si no está al día, las facturas pendientes y cuánto se debe.
+function armarResumen(r, pagado) {
+  let adeudado = null;
+  let pendientes = [];
+  if (!pagado) {
+    pendientes = facturasPendientes(r.facturas || [], r.numeroFactura);
+    adeudado = pendientes.reduce((s, f) => s + (f.monto || 0), 0);
+  }
+  return {
+    adeudado,
+    facturasPendientes: pendientes.map((f) => ({ periodo: f.periodo, total: f.total, vencimiento: f.vencimiento })),
+  };
+}
 async function runScanJob(job, targetNius) {
   const cred = job.credenciales;
   if (!cred || !cred.usuario || !cred.clave) {
@@ -438,6 +453,7 @@ async function runScanJob(job, targetNius) {
   const now = new Date();
 
   for (const item of targetNius) {
+    if (job.cancelado) break;
     try {
       const r = await checkNiuHttp(jar, state, item.niu);
       state = r.state;
@@ -467,7 +483,7 @@ async function runScanJob(job, targetNius) {
         entidadRecaudo: r.entidadRecaudo || null,
         numeroCuenta: r.numeroCuenta || null,
         numeroFactura: r.numeroFactura || null,
-        facturas: r.facturas || [],
+        ...armarResumen(r, pagado),
         pagado,
         diagnostico_seleccion: r.seleccionMostrada || null,
       });
@@ -500,7 +516,7 @@ app.post('/api/scan/start', (req, res) => {
 
   if (targetList.length === 0) return res.json({ ok: false, message: 'La lista de matriculas está vacía' });
 
-  const jobId = createJob(targetList, label, req.body && req.body.credenciales);
+  const jobId = createJob(targetList, label, req.body && req.body.credenciales, req.body && req.body.incluirConsumo);
   const pos = queuePosition(jobId);
   const message = pos && pos > 1
     ? `En cola (posición ${pos}) — ${targetList.length} matriculas, alguien más está usando el servidor`
@@ -525,23 +541,16 @@ app.post('/api/consulta', async (req, res) => {
   if (!r || String(r.ultimoPago || '').startsWith('ERROR:')) {
     return res.json({ ok: false, message: r ? r.ultimoPago : 'No se pudo consultar' });
   }
-  let adeudado = null;
-  let pendientes = [];
-  if (!r.pagado) {
-    pendientes = facturasPendientes(r.facturas || [], r.numeroFactura);
-    adeudado = pendientes.reduce((s, f) => s + (f.monto || 0), 0);
-  }
   res.json({
     ok: true,
     ultimoPago: r.ultimoPago,
     alDia: r.pagado,
     valorPagado: r.valorPagado || null,
     estadoPago: r.estadoPago || null,
-    adeudado,
+    adeudado: r.adeudado,
     consumoKwh: r.consumoKwh,
-    facturasPendientes: pendientes.map((f) => ({ periodo: f.periodo, total: f.total, vencimiento: f.vencimiento })),
-  });
-});
+    facturasPendientes: r.facturasPendientes,
+  });});
 
 app.get('/api/scan/status/:jobId', (req, res) => {
   const job = jobs[req.params.jobId];
@@ -555,6 +564,14 @@ app.get('/api/scan/status/:jobId', (req, res) => {
     finishedAt: job.finishedAt,
     error: job.error,
   });
+});
+
+app.post('/api/scan/cancel/:jobId', (req, res) => {
+  const job = jobs[req.params.jobId];
+  if (!job) return res.status(404).json({ ok: false });
+  job.cancelado = true;
+  delete job.credenciales;
+  res.json({ ok: true });
 });
 
 app.get('/api/scan/results/:jobId', (req, res) => {
