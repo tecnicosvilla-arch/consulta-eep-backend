@@ -421,13 +421,18 @@ async function checkNiuHttp(jar, state, niu) {
   return { encontrado: true, seleccionMostrada: found.display, facturas, ...pago, state: newState.ajaxIdentifier ? newState : state };
 }
 
-// Lo que necesita Mi ruta de cada NIU: si no está al día, las facturas pendientes y cuánto se debe.
+// Lo que necesita Mi ruta de cada NIU: si no está al día, las facturas pendientes y el total de la más reciente.
 function armarResumen(r, pagado) {
   let adeudado = null;
   let pendientes = [];
   if (!pagado) {
     pendientes = facturasPendientes(r.facturas || [], r.numeroFactura);
-    adeudado = pendientes.reduce((s, f) => s + (f.monto || 0), 0);
+    const ultimaPendiente = pendientes.reduce(
+      (ultima, factura) => !ultima || Number(factura.numero) > Number(ultima.numero) ? factura : ultima,
+      null,
+    );
+    // El total de la última factura ya incluye los saldos anteriores; no sumar facturas más antiguas.
+    adeudado = ultimaPendiente ? (ultimaPendiente.monto ?? 0) : 0;
   }
   return {
     adeudado,
